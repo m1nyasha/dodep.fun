@@ -37,6 +37,7 @@ export function useSfx() {
     if (import.meta.server || !enabled.value) return;
     try {
       ctx ??= new AudioContext();
+      if (ctx.state === 'suspended') void ctx.resume();
       const t = ctx.currentTime;
       const peak = kind === 'lose' ? 0.045 : kind === 'coin' ? 0.03 : 0.08;
       for (const [freq, delay, length, type = 'triangle'] of sequences(2 ** (step / 12))[kind]) {
