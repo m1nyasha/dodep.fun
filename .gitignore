@@ -1,0 +1,15 @@
+*.log
+.DS_Store
+.env
+.env.backup
+.env.production
+/.codex
+/.cursor/
+/.idea
+/.nova
+/.vscode
+/.zed
+/auth.json
+Homestead.json
+Homestead.yaml
+Thumbs.db
