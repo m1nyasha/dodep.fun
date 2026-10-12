@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { APP_FILTER } from '@nestjs/core';
+import { SentryGlobalFilter, SentryModule } from '@sentry/nestjs/setup';
 import { AuthModule } from './auth/auth.module.js';
 import { DbModule } from './db/db.module.js';
 import { FeedModule } from './feed/feed.module.js';
@@ -6,5 +8,8 @@ import { GameModule } from './game/game.module.js';
 import { HealthModule } from './health/health.module.js';
 import { PlayersModule } from './players/players.module.js';
 
-@Module({ imports: [DbModule, HealthModule, AuthModule, PlayersModule, GameModule, FeedModule] })
+@Module({
+  imports: [SentryModule.forRoot(), DbModule, HealthModule, AuthModule, PlayersModule, GameModule, FeedModule],
+  providers: [{ provide: APP_FILTER, useClass: SentryGlobalFilter }],
+})
 export class AppModule {}

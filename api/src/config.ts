@@ -11,6 +11,9 @@ const env = z
     TRUST_PROXY: z.coerce.number().int().min(0).default(0),
     ADMIN_URL: z.string().default(''),
     THROTTLE_LIMIT: z.coerce.number().int().positive().default(20),
+    SENTRY_DSN: z.string().default(''),
+    SENTRY_ENVIRONMENT: z.string().default('development'),
+    SENTRY_RELEASE: z.string().default(''),
   })
   .parse(process.env);
 
@@ -21,4 +24,5 @@ export const config = {
   trustProxy: env.TRUST_PROXY,
   adminUrl: env.ADMIN_URL,
   throttleLimit: env.THROTTLE_LIMIT,
+  sentry: { dsn: env.SENTRY_DSN, environment: env.SENTRY_ENVIRONMENT, release: env.SENTRY_RELEASE },
 };

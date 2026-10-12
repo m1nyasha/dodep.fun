@@ -21,3 +21,11 @@ minimumReleaseAgeExclude:
   - '@nestjs/schematics@12.0.7'
   - '@nestjs/testing@12.1.3'
   - happy-dom@21.0.1
+  - '@sentry/bundler-plugins@11.7.0'
+  - '@sentry/conventions@0.27.0'
+  - '@sentry/core@11.7.0'
+  - '@sentry/nestjs@11.7.0'
+  - '@sentry/node@11.7.0'
+  - '@sentry/opentelemetry@11.7.0'
+  - '@sentry/server-runtime-injection@11.7.0'
+  - '@sentry/server-utils@11.7.0'
