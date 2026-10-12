@@ -11,8 +11,13 @@ export async function verifyRound(mines: number[], salt: string, hash: string): 
   return actual !== '' && actual === hash;
 }
 
+let cachedHash: Promise<string> | undefined;
+
+// The fingerprint inputs (tz/screen/langs/platform/cores) are stable for the whole
+// session, so hash them once and reuse the promise instead of re-hitting WebCrypto
+// on every login/register submit.
 export function clientHash(): Promise<string> {
-  return sha256Hex(
+  return (cachedHash ??= sha256Hex(
     JSON.stringify({
       tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
       screen: `${screen.width}x${screen.height}x${screen.colorDepth}`,
@@ -20,5 +25,5 @@ export function clientHash(): Promise<string> {
       platform: navigator.platform,
       hardwareConcurrency: navigator.hardwareConcurrency,
     }),
-  );
+  ));
 }

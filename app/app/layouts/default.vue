@@ -4,6 +4,7 @@
     <main class="page"><slot /></main>
     <LayoutFooter />
     <UiToasts />
+    <AuthModal />
   </div>
 </template>
 
