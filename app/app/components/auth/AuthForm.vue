@@ -68,9 +68,7 @@ async function submit() {
       const body: LoginBody = { nickname, password: form.password, clientHash: hash };
       await api('/auth/login', { method: 'POST', body });
     }
-    // Don't block the success flow on this: login/register already succeeded, and the
-    // `me` state will update reactively the moment it resolves.
-    void refresh().catch(() => {});
+    await refresh();
     sfx.play('win');
     toast.show(
       register.value ? 'Аккаунт создан' : 'С возвращением',

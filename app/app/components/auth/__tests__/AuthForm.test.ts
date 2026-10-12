@@ -1,6 +1,5 @@
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime';
-import { flushPromises } from '@vue/test-utils';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import AuthForm from '../AuthForm.vue';
 
 const json = (status: number, body: unknown) =>
@@ -30,8 +29,7 @@ describe('AuthForm', () => {
     const w = await fill('register', 'kletka17', 'password123');
     await w.get('input[name="agree"]').setValue(true);
     await w.get('form').trigger('submit');
-    await flushPromises();
-    expect(w.get('.form-error').text()).toBe('Регистрация пока недоступна, повторите попытку позже');
+    await vi.waitFor(() => expect(w.get('.form-error').text()).toBe('Регистрация пока недоступна, повторите попытку позже'));
     expect(w.emitted('done')).toBeUndefined();
   });
 
@@ -43,8 +41,7 @@ describe('AuthForm', () => {
     const w = await fill('register', 'mono', 'password123');
     await w.get('input[name="agree"]').setValue(true);
     await w.get('form').trigger('submit');
-    await flushPromises();
-    expect(w.get('[data-field="nickname"] .field-msg').text()).toBe('Этот ник уже занят');
+    await vi.waitFor(() => expect(w.get('[data-field="nickname"] .field-msg').text()).toBe('Этот ник уже занят'));
   });
 
   it('logs in and emits done', async () => {
@@ -66,7 +63,6 @@ describe('AuthForm', () => {
     }));
     const w = await fill('login', 'felix', 'password123');
     await w.get('form').trigger('submit');
-    await flushPromises();
-    expect(w.emitted('done')).toHaveLength(1);
+    await vi.waitFor(() => expect(w.emitted('done')).toHaveLength(1));
   });
 });
