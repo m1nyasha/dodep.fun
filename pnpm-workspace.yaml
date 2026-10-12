@@ -3,6 +3,7 @@ packages:
   - api
   - ui
   - app
+  - admin
 allowBuilds:
   '@scarf/scarf': false
   '@swc/core': true

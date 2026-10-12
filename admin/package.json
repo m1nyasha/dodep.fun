@@ -1,0 +1,29 @@
+{
+  "name": "@dodep/admin",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev --port 4300",
+    "build": "nuxt generate",
+    "preview": "nuxt preview --port 4300",
+    "postinstall": "nuxt prepare",
+    "lint": "eslint . && stylelint \"app/**/*.{css,vue}\"",
+    "typecheck": "nuxt typecheck",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@dodep/shared": "workspace:*",
+    "@dodep/ui": "workspace:*",
+    "@vueuse/core": "^15.0.0",
+    "nuxt": "^4.6.1",
+    "vue": "^3.5.43"
+  },
+  "devDependencies": {
+    "@nuxt/test-utils": "^4.3.3",
+    "@vue/test-utils": "^2.5.1",
+    "happy-dom": "^21.0.1",
+    "playwright-core": "^1.64.0",
+    "vue-tsc": "^3.3.13"
+  }
+}

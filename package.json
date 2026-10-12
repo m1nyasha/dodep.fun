@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build:shared": "pnpm --filter @dodep/shared build",
-    "dev": "pnpm build:shared && pnpm --parallel --filter @dodep/shared --filter @dodep/api --filter @dodep/app dev",
+    "dev": "pnpm build:shared && pnpm --parallel --filter @dodep/shared --filter @dodep/api --filter @dodep/app --filter @dodep/admin dev",
     "lint": "pnpm -r lint && eslint scripts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
