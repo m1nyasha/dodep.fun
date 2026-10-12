@@ -1,0 +1,44 @@
+name: dodep-prodlike
+
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: dodep
+      MYSQL_USER: dodep
+      MYSQL_PASSWORD: dodep
+    command: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_0900_ai_ci']
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1', '-uroot', '-proot']
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  api:
+    image: ${IMAGE_API:-dodep-api}:${TAG:-local}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: mysql://dodep:dodep@mysql:3306/dodep
+      COOKIE_SECURE: 'false'
+      TRUST_PROXY: '0'
+      ADMIN_URL: http://localhost:${ADMIN_PORT:-4300}
+    ports:
+      - '${API_PORT:-4200}:4200'
+
+  app:
+    image: ${IMAGE_APP:-dodep-app}:${TAG:-local}
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      NUXT_API_INTERNAL_URL: http://api:4200
+    ports:
+      - '${APP_PORT:-4100}:4100'
+
+  admin:
+    image: ${IMAGE_ADMIN:-dodep-admin}:${TAG:-local}
+    ports:
+      - '${ADMIN_PORT:-4300}:80'
