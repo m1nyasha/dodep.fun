@@ -113,8 +113,9 @@ describe('auth', () => {
   it('deletes the user expired sessions on a new login', async () => {
     await register(t.server, 'stale_sam');
     const [user] = await t.db.select().from(users).where(eq(users.nickname, 'stale_sam'));
+    expect(user).toBeDefined();
     await t.db.insert(sessions).values({
-      userId: user!.id,
+      userId: user?.id ?? '',
       kind: 'user',
       tokenHash: 'expired-hash',
       expiresAt: new Date(Date.now() - 60_000),
