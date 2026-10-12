@@ -9,11 +9,17 @@ export default defineNuxtConfig({
   css: ['~/assets/css/motion.css'],
   runtimeConfig: {
     apiInternalUrl: '',
-    public: { sentryDsn: '', sentryEnvironment: 'development', sentryRelease: '', wsUrl: '' },
+    public: {
+      sentryDsn: '',
+      sentryEnvironment: 'development',
+      sentryRelease: '',
+      // Nuxt's dev server doesn't proxy WebSocket upgrades, so in dev the feed connects to the API directly.
+      wsUrl: process.env.NODE_ENV === 'development' ? 'ws://localhost:4200/api/ws' : '',
+    },
   },
   nitro: {
     devProxy: {
-      '/api': { target: 'http://localhost:4200/api', changeOrigin: true, ws: true },
+      '/api': { target: 'http://localhost:4200/api', changeOrigin: true },
     },
   },
   sentry: {

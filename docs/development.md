@@ -49,7 +49,7 @@ pnpm dev
 - Swagger: http://localhost:4200/api/docs
 - WebSocket: ws://localhost:4200/api/ws
 
-Проверено: прокси Nitro devProxy (`ws: true`) не проксирует `/api/ws` в дев-режиме — хендшейк падает с `404`. Обходной путь: `app/.env` с `NUXT_PUBLIC_WS_URL=ws://localhost:4200/api/ws` (подхватывается `useFeed` напрямую, без прокси), перезапустить `pnpm dev`.
+Dev-сервер Nuxt не проксирует WebSocket, поэтому в dev лента подключается к API напрямую — `ws://localhost:4200/api/ws` (значение по умолчанию `wsUrl` в `app/nuxt.config.ts`). В проде адрес пустой и клиент идёт на тот же хост: `/api/ws` проксирует Traefik.
 
 Миграции: изменить `api/src/db/schema.ts` → `pnpm --filter @dodep/api db:generate --name <имя>` → `db:migrate`.
 
@@ -82,12 +82,12 @@ e2e-тесты пересоздают базу `dodep_test` при каждом 
 pnpm dev          # shared (watch) + api:4200 + app:4100
 ```
 
-В dev Nuxt проксирует `/api` и WebSocket `/api/ws` на `localhost:4200`. Если WebSocket не проходит через прокси, задать `NUXT_PUBLIC_WS_URL=ws://localhost:4200/api/ws` в `app/.env`.
+В dev Nuxt проксирует HTTP-запросы `/api` на `localhost:4200`; WebSocket ленты подключается к API напрямую (см. раздел API).
 
-| Переменная              | Назначение                                                        |
-| ----------------------- | ----------------------------------------------------------------- |
-| `NUXT_API_INTERNAL_URL` | адрес API для SSR-запросов (по умолчанию `http://localhost:4200`) |
-| `NUXT_PUBLIC_WS_URL`    | явный адрес WebSocket (по умолчанию — тот же хост, `/api/ws`)     |
+| Переменная              | Назначение                                                                                 |
+| ----------------------- | ------------------------------------------------------------------------------------------ |
+| `NUXT_API_INTERNAL_URL` | адрес API для SSR-запросов (по умолчанию `http://localhost:4200`)                          |
+| `NUXT_PUBLIC_WS_URL`    | адрес WebSocket (dev — `ws://localhost:4200/api/ws`, прод — пусто: тот же хост, `/api/ws`) |
 
 Правила кода фронтенда: компоненты — по папкам (`layout`, `auth`, `game`, `feed`, …), не больше ~300 строк; стили — `<style scoped>` на токенах; тесты — в `__tests__` рядом с кодом; состояние — `useState`, без Pinia. Stylelint проверяет `.css` и `<style>` в `.vue` (`pnpm lint`).
 
