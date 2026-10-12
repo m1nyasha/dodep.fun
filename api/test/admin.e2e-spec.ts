@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { sessions } from '../src/db/schema.js';
+import { sessions, users } from '../src/db/schema.js';
 import { createTestApp, register, setUser, type TestApp } from './helpers.js';
 
 async function ticketFor(t: TestApp, nickname: string) {
@@ -58,7 +58,10 @@ describe('admin auth', () => {
 
   it('rejects an expired ticket', async () => {
     const { ticket } = await ticketFor(t, 'boss');
-    await t.db.update(sessions).set({ expiresAt: new Date(Date.now() - 1_000) }).where(eq(sessions.kind, 'admin_ticket'));
+    await t.db
+      .update(sessions)
+      .set({ expiresAt: new Date(Date.now() - 1_000) })
+      .where(eq(sessions.kind, 'admin_ticket'));
     await request(t.server).post('/api/admin/auth/exchange').send({ ticket }).expect(401);
   });
 
@@ -88,5 +91,47 @@ describe('admin auth', () => {
     expect(Object.keys(adminDoc.body.paths)).toContain('/api/admin/me');
     const publicDoc = await request(t.server).get('/api/docs-json').expect(200);
     expect(Object.keys(publicDoc.body.paths).some((p) => p.startsWith('/api/admin'))).toBe(false);
+  });
+});
+
+describe('admin overview and audit', () => {
+  let t: TestApp;
+  beforeAll(async () => {
+    t = await createTestApp();
+  });
+  beforeEach(() => t.reset());
+  afterAll(() => t.close());
+
+  it('counts accounts and shows the active rules', async () => {
+    const { admin } = await loginAdmin(t);
+    await register(t.server, 'bot');
+    await setUser(t.db, 'bot', { isAi: true });
+    await register(t.server, 'quiet');
+    await setUser(t.db, 'quiet', { blockedAt: new Date(), statusText: 'x', statusHiddenAt: new Date() });
+    const { body } = await admin.get('/api/admin/overview').expect(200);
+    expect(body).toMatchObject({
+      accounts: 3,
+      aiAccounts: 1,
+      blocked: 1,
+      hiddenStatuses: 1,
+      rounds: 0,
+      activeRuleVersion: 1,
+      recentActions: [],
+    });
+  });
+
+  it('pages the audit log newest first', async () => {
+    const { admin } = await loginAdmin(t);
+    const { AuditService } = await import('../src/admin/audit.service.js');
+    const audit = t.app.get(AuditService);
+    const [boss] = await t.db.select().from(users);
+    if (boss === undefined) throw new Error('expected a seeded admin user');
+    await audit.log(t.db, { adminId: boss.id, action: 'settings_update', reason: 'первое' });
+    await audit.log(t.db, { adminId: boss.id, action: 'settings_update', reason: 'второе' });
+    const { body } = await admin.get('/api/admin/audit?limit=1').expect(200);
+    expect(body.total).toBe(2);
+    expect(body.items).toEqual([
+      expect.objectContaining({ action: 'settings_update', admin: 'boss', target: null, reason: 'второе' }),
+    ]);
   });
 });
