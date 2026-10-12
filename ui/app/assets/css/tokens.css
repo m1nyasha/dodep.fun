@@ -1,0 +1,30 @@
+:root {
+  --paper: #efe9dd;
+  --paper-2: #e5ddcc;
+  --card: #f9f6ef;
+  --ink: #18160f;
+  --muted: #776f5f;
+  --line: #ddd4c2;
+  --line-2: #c8bda7;
+  --coin: #ffc629;
+  --coin-d: #c48b00;
+  --mine: #ff5233;
+  --mine-d: #b3321a;
+  --ai: #3d5afe;
+  --pos: #0b8a52;
+  --neg: #d4381c;
+  --c-bg: #1b1914;
+  --c-2: #25221c;
+  --c-3: #312d25;
+  --c-text: #f3ede0;
+  --c-muted: #8f8771;
+  --key: #efe6d2;
+  --key-d: #a3977d;
+  --spring: cubic-bezier(0.3, 1.35, 0.5, 1);
+  --out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --font-sans: 'Golos Text', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-display: 'Unbounded', sans-serif;
+
+  color-scheme: light;
+}
