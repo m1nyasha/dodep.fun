@@ -25,7 +25,7 @@ const sfx = useSfx();
       </ClientOnly>
       <LayoutAdminButton v-if="me?.adminUrl" />
       <LayoutWalletButton />
-      <NuxtLink v-if="me" class="me" :to="`/players/${encodeURIComponent(me.nickname)}`" title="Профиль">
+      <NuxtLink v-if="me" class="account" :to="`/players/${encodeURIComponent(me.nickname)}`" title="Профиль">
         <UiAvatar :name="me.nickname" kind="me" :size="32" />
         <span>{{ me.nickname }}</span>
       </NuxtLink>
@@ -90,7 +90,7 @@ const sfx = useSfx();
   color: var(--ink);
 }
 
-.me {
+.account {
   display: flex;
   align-items: center;
   gap: 9px;
@@ -101,7 +101,7 @@ const sfx = useSfx();
   transition: background 0.2s;
 }
 
-.me:hover {
+.account:hover {
   background: var(--paper-2);
 }
 
@@ -126,11 +126,11 @@ const sfx = useSfx();
     width: 36px;
   }
 
-  .me {
+  .account {
     padding: 2px;
   }
 
-  .me > span {
+  .account > span:last-child {
     display: none;
   }
 }
