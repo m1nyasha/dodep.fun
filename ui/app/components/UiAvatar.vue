@@ -18,11 +18,18 @@ const cells = computed(() => {
   }
   return out;
 });
+
+// The 5×5 grid is symmetric horizontally but not vertically: shift the view so the drawn rows sit in the middle.
+const viewBox = computed(() => {
+  const ys = cells.value.map((c) => c.y);
+  const center = ys.length ? (Math.min(...ys) + Math.max(...ys) + 1) / 2 : 2.5;
+  return `-0.5 ${center - 3} 6 6`;
+});
 </script>
 
 <template>
   <span class="ava" :class="kind" :style="{ '--s': `${size}px` }">
-    <svg viewBox="-.5 -.5 6 6" aria-hidden="true">
+    <svg :viewBox="viewBox" aria-hidden="true">
       <rect v-for="c in cells" :key="`${c.x}-${c.y}`" :x="c.x" :y="c.y" width="1" height="1" />
     </svg>
   </span>
