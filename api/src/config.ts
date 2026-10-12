@@ -9,7 +9,10 @@ const env = z
     PORT: z.coerce.number().int().default(4200),
     COOKIE_SECURE: z.enum(['true', 'false']).default('false'),
     TRUST_PROXY: z.coerce.number().int().min(0).default(0),
-    ADMIN_URL: z.string().default(''),
+    ADMIN_URL: z
+      .string()
+      .refine((v) => v === '' || URL.canParse(v), { message: 'ADMIN_URL must be empty or a valid URL' })
+      .default(''),
     THROTTLE_LIMIT: z.coerce.number().int().positive().default(20),
     SENTRY_DSN: z.string().default(''),
     SENTRY_ENVIRONMENT: z.string().default('development'),

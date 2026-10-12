@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { sessions, users } from '../src/db/schema.js';
-import { createTestApp, register, setUser, type TestApp } from './helpers.js';
+import { createTestApp, PASSWORD, register, setUser, type TestApp } from './helpers.js';
 
 async function ticketFor(t: TestApp, nickname: string) {
   const user = await register(t.server, nickname);
@@ -65,6 +65,34 @@ describe('admin auth', () => {
     await request(t.server).post('/api/admin/auth/exchange').send({ ticket }).expect(401);
   });
 
+  it('refuses a ticket from a blocked admin', async () => {
+    const { ticket } = await ticketFor(t, 'boss');
+    await setUser(t.db, 'boss', { blockedAt: new Date() });
+    const res = await request(t.server).post('/api/admin/auth/exchange').send({ ticket }).expect(401);
+    expect(res.body.code).toBe('TICKET_INVALID');
+  });
+
+  it('exchanges a ticket exactly once under concurrent requests', async () => {
+    const { ticket } = await ticketFor(t, 'boss');
+    const results = await Promise.all(
+      Array.from({ length: 5 }, () => request(t.server).post('/api/admin/auth/exchange').send({ ticket })),
+    );
+    expect(results.filter((r) => r.status === 200)).toHaveLength(1);
+    expect(results.filter((r) => r.status === 401)).toHaveLength(4);
+  });
+
+  it('rejects a public session token presented as admin_sid', async () => {
+    const res = await request(t.server)
+      .post('/api/auth/register')
+      .send({ nickname: 'plainuser', password: PASSWORD, agree: true })
+      .expect(204);
+    const sidCookie = res.get('Set-Cookie')?.find((c) => c.startsWith('sid='));
+    if (!sidCookie) throw new Error('register did not set a sid cookie');
+    const sidToken = /sid=([^;]+)/.exec(sidCookie)?.[1];
+    if (!sidToken) throw new Error('sid cookie had no value');
+    await request(t.server).get('/api/admin/me').set('Cookie', `admin_sid=${sidToken}`).expect(401);
+  });
+
   it('opens the admin API only with admin_sid', async () => {
     const { user, admin } = await loginAdmin(t);
     await user.get('/api/admin/me').expect(401);
@@ -91,6 +119,11 @@ describe('admin auth', () => {
     expect(Object.keys(adminDoc.body.paths)).toContain('/api/admin/me');
     const publicDoc = await request(t.server).get('/api/docs-json').expect(200);
     expect(Object.keys(publicDoc.body.paths).some((p) => p.startsWith('/api/admin'))).toBe(false);
+  });
+
+  it('keeps the Swagger gate case-insensitive', async () => {
+    await request(t.server).get('/api/admin/Docs-json').expect(401);
+    await request(t.server).get('/api/admin/DOCS').expect(401);
   });
 });
 
