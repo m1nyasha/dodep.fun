@@ -9,6 +9,8 @@ const leaderboardQuery = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(15),
 });
 
+const statsQuery = z.object({ scope: z.enum(['human', 'ai']).default('human') });
+
 @Controller()
 export class PlayersController {
   constructor(private readonly players: PlayersService) {}
@@ -21,5 +23,10 @@ export class PlayersController {
   @Get('players/:nickname')
   player(@Param('nickname') nickname: string) {
     return this.players.byNickname(nickname);
+  }
+
+  @Get('stats')
+  stats(@Query({ schema: statsQuery }) query: z.infer<typeof statsQuery>) {
+    return this.players.stats(query.scope);
   }
 }

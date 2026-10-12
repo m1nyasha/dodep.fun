@@ -1,9 +1,11 @@
-import type { LeaderboardDto, PlayerDto } from '@dodep/shared';
+import type { LeaderboardDto, PlayerDto, StatsDto, StatsScope } from '@dodep/shared';
 import { Inject, Injectable } from '@nestjs/common';
-import { and, count, eq, like, type SQL } from 'drizzle-orm';
+import { and, count, eq, isNull, like, type SQL } from 'drizzle-orm';
 import { apiError } from '../common/api-error.js';
 import { DB, type Db } from '../db/db.module.js';
+import { users } from '../db/schema.js';
 import { rankedPlayers, toPlayerDto } from './ranking.js';
+import { summarize } from './stats.js';
 
 export interface LeaderboardQuery {
   filter: 'all' | 'human' | 'ai';
@@ -44,5 +46,19 @@ export class PlayersService {
       .from(ranked)
       .where(eq(ranked.nickname, nickname));
     return row ? { rank: Number(row.rank), humanRank: row.humanRank === null ? null : Number(row.humanRank) } : null;
+  }
+
+  // ponytail: агрегаты считаются в памяти по всем аккаунтам — перейти на SQL-агрегаты, когда аккаунтов станет десятки тысяч.
+  async stats(scope: StatsScope): Promise<StatsDto> {
+    const rows = await this.db
+      .select({
+        balance: users.balance,
+        totalWagered: users.totalWagered,
+        totalPayout: users.totalPayout,
+        roundsCount: users.roundsCount,
+      })
+      .from(users)
+      .where(and(isNull(users.blockedAt), eq(users.isAi, scope === 'ai')));
+    return summarize(rows, scope);
   }
 }

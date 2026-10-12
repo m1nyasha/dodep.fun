@@ -93,4 +93,53 @@ describe('players', () => {
       hu6: null,
     });
   });
+
+  it('claims the daily coins only when the balance is low and the window is open', async () => {
+    const agent = await register(t.server, 'zhenya');
+    expect((await agent.post('/api/me/daily').expect(400)).body.code).toBe('DAILY_UNAVAILABLE');
+
+    await setUser(t.db, 'zhenya', { balance: 300, lastDailyAt: new Date(Date.now() - 3 * 24 * 3_600_000) });
+    const claim = await agent.post('/api/me/daily').expect(200);
+    expect(claim.body).toMatchObject({ balance: 10_000, added: 9_700 });
+    expect(new Date(claim.body.nextDailyAt).getTime()).toBeGreaterThan(Date.now());
+
+    await setUser(t.db, 'zhenya', { balance: 300 });
+    expect((await agent.post('/api/me/daily').expect(400)).body.code).toBe('DAILY_UNAVAILABLE');
+  });
+
+  // NOTE: brief used 2-char nicknames (s1..s6), which fail the 3-20 char nickname regex. Renamed to st1..st6.
+  it('lets only top-5 humans publish a cleaned status', async () => {
+    const names = ['st1', 'st2', 'st3', 'st4', 'st5', 'st6'];
+    const a1 = await register(t.server, 'st1');
+    const a6 = await register(t.server, 'st6');
+    for (const n of ['st2', 'st3', 'st4', 'st5']) await register(t.server, n);
+    for (const [i, n] of names.entries()) await setUser(t.db, n, { balance: 60_000 - i * 1_000 });
+
+    const ok = await a1.put('/api/me/status').send({ text: '  Сначала  думай https://spam.io ' }).expect(200);
+    expect(ok.body.status).toBe('Сначала думай');
+    const card = await request(t.server).get('/api/players/st1').expect(200);
+    expect(card.body.status).toBe('Сначала думай');
+
+    expect((await a6.put('/api/me/status').send({ text: 'hi' }).expect(403)).body.code).toBe('STATUS_FORBIDDEN');
+    const cleared = await a1.put('/api/me/status').send({ text: '   ' }).expect(200);
+    expect(cleared.body.status).toBeNull();
+  });
+
+  it('summarizes humans and AI separately', async () => {
+    await register(t.server, 'human1');
+    await register(t.server, 'bot1');
+    await setUser(t.db, 'human1', { balance: 12_000, totalWagered: 1_000, totalPayout: 3_000, roundsCount: 4 });
+    await setUser(t.db, 'bot1', { balance: 0, isAi: true, totalWagered: 10_000, totalPayout: 0, roundsCount: 9 });
+    const human = await request(t.server).get('/api/stats?scope=human').expect(200);
+    expect(human.body).toMatchObject({
+      scope: 'human',
+      accounts: 1,
+      rounds: 4,
+      rtp: 3,
+      profitableShare: 1,
+      medianBalance: 12_000,
+    });
+    const ai = await request(t.server).get('/api/stats?scope=ai').expect(200);
+    expect(ai.body).toMatchObject({ scope: 'ai', accounts: 1, rounds: 9, rtp: 0, profitableShare: 0, medianBalance: 0 });
+  });
 });
