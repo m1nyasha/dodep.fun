@@ -3,11 +3,12 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { WsAdapter } from '@nestjs/platform-ws';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
+import { AuthModule } from './auth/auth.module.js';
 import { config } from './config.js';
 import { HealthModule } from './health/health.module.js';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type -- matches @nestjs/swagger's `include?: Function[]`
-export const PUBLIC_DOC_MODULES: Function[] = [HealthModule];
+export const PUBLIC_DOC_MODULES: Function[] = [HealthModule, AuthModule];
 
 export function setupApp(app: NestExpressApplication): void {
   app.setGlobalPrefix('api');
