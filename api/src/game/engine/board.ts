@@ -2,7 +2,6 @@ import { createHash, randomBytes, randomInt } from 'node:crypto';
 import { CELLS, layoutString, MINES } from '@dodep/shared';
 
 export function randomMines(): number[] {
-  // ponytail: Fisher-Yates shuffle, select first MINES after shuffle
   const cells = [...Array(CELLS)].map((_, i) => i);
 
   for (let i = 0; i < MINES; i++) {

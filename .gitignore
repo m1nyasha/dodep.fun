@@ -41,3 +41,7 @@ Thumbs.db
 
 # superpowers working docs
 docs/superpowers/
+.superpowers/
+
+# playwright mcp output
+.playwright-mcp/
