@@ -325,3 +325,42 @@ describe('admin rules', () => {
     ]);
   });
 });
+
+describe('admin registration limit', () => {
+  let t: TestApp;
+  beforeAll(async () => {
+    t = await createTestApp();
+  });
+  beforeEach(() => t.reset());
+  afterAll(() => t.close());
+
+  it('reads, validates and applies the limit', async () => {
+    const { admin } = await loginAdmin(t);
+    expect((await admin.get('/api/admin/settings/registration-limit').expect(200)).body).toEqual({
+      count: 1000,
+      windowHours: 24,
+    });
+    await admin.put('/api/admin/settings/registration-limit').send({ count: 0, windowHours: 24 }).expect(400);
+    await admin.put('/api/admin/settings/registration-limit').send({ count: 1, windowHours: 1000 }).expect(400);
+    const saved = await admin
+      .put('/api/admin/settings/registration-limit')
+      .send({ count: 1, windowHours: 2, reason: 'наплыв' })
+      .expect(200);
+    expect(saved.body).toEqual({ count: 1, windowHours: 2 });
+
+    await register(t.server, 'first', { ip: '10.7.7.7' });
+    const res = await request(t.server)
+      .post('/api/auth/register')
+      .set('X-Forwarded-For', '10.7.7.7')
+      .send({ nickname: 'second', password: 'password123', agree: true })
+      .expect(403);
+    expect(res.body.code).toBe('REGISTRATION_UNAVAILABLE');
+
+    const audit = await admin.get('/api/admin/audit').expect(200);
+    expect(audit.body.items[0]).toMatchObject({
+      action: 'settings_update',
+      reason: 'наплыв',
+      payload: { count: 1, windowHours: 2 },
+    });
+  });
+});

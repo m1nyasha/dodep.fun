@@ -22,3 +22,9 @@ export const ruleSchema = z
     for (const [path, message] of Object.entries(ruleInputErrors(value)))
       ctx.addIssue({ code: 'custom', path: [path], message });
   });
+
+export const limitSchema = z.object({
+  count: z.number().int().min(1).max(1000),
+  windowHours: z.number().int().min(1).max(720),
+  reason: z.string().trim().max(255).optional(),
+});
