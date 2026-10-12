@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { ruleVersions, sessions, users } from '../src/db/schema.js';
+import { ruleVersions, rounds, sessions, users } from '../src/db/schema.js';
 import { createTestApp, PASSWORD, register, setUser, type TestApp } from './helpers.js';
 
 async function ticketFor(t: TestApp, nickname: string) {
@@ -451,5 +451,25 @@ describe('admin export', () => {
       (await admin.get('/api/admin/export?kind=rounds&format=json&from=2000-01-01&to=2000-01-02').expect(200)).body,
     ).toEqual([]);
     await admin.get('/api/admin/export?from=yesterday').expect(400);
+  });
+
+  it('filters by finishedAt, not startedAt, so a round started before the window but finished inside it is included', async () => {
+    const { admin } = await loginAdmin(t);
+    const player = await register(t.server, 'playertwo');
+    const { body } = await player.post('/api/rounds').send({ bet: 100 }).expect(201);
+    await t.db
+      .update(rounds)
+      .set({ startedAt: new Date('2000-01-01T00:00:00Z') })
+      .where(eq(rounds.id, body.round.id));
+    await player.post(`/api/rounds/${body.round.id}/open`).send({ cell: 0 }).expect(200);
+
+    const today = new Date().toISOString().slice(0, 10);
+    const windowed = await admin.get(`/api/admin/export?kind=rounds&format=json&from=${today}&to=${today}`).expect(200);
+    expect(windowed.body.map((r: { id: string }) => r.id)).toEqual([body.round.id]);
+
+    const excluded = await admin
+      .get('/api/admin/export?kind=rounds&format=json&from=2000-01-01&to=2000-01-02')
+      .expect(200);
+    expect(excluded.body).toEqual([]);
   });
 });

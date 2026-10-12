@@ -69,8 +69,8 @@ export class ExportService {
     const filters: SQL[] = [inArray(rounds.status, ['cashed_out', 'hit_mine'])];
     if (query.experimentId) filters.push(eq(rounds.experimentId, query.experimentId));
     if (query.isAi) filters.push(eq(users.isAi, query.isAi === 'true'));
-    if (query.from) filters.push(gte(rounds.startedAt, new Date(`${query.from}T00:00:00Z`)));
-    if (query.to) filters.push(lt(rounds.startedAt, new Date(Date.parse(`${query.to}T00:00:00Z`) + DAY)));
+    if (query.from) filters.push(gte(rounds.finishedAt, new Date(`${query.from}T00:00:00Z`)));
+    if (query.to) filters.push(lt(rounds.finishedAt, new Date(Date.parse(`${query.to}T00:00:00Z`) + DAY)));
     return filters;
   }
 }
