@@ -1,6 +1,6 @@
 import type { RuleVersionDto, RuleVersionInput } from '@dodep/shared';
 import { Inject, Injectable } from '@nestjs/common';
-import { desc, eq, max } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { apiError } from '../common/api-error.js';
 import { DB, type Db } from '../db/db.module.js';
 import { ruleVersions, users, type UserRow } from '../db/schema.js';
@@ -35,8 +35,10 @@ export class RulesAdminService {
   async create(admin: UserRow, input: RuleVersionInput): Promise<RuleVersionDto> {
     const { reason, ...fields } = input;
     const version = await this.db.transaction(async (tx) => {
-      const [top] = await tx.select({ v: max(ruleVersions.version) }).from(ruleVersions);
-      const next = (top?.v ?? 0) + 1;
+      // Lock the existing rows (and the gap after the last one) before computing max+1, so
+      // concurrent creates serialize instead of both computing the same next version.
+      const locked = await tx.select({ v: ruleVersions.version }).from(ruleVersions).for('update');
+      const next = locked.reduce((max, r) => Math.max(max, r.v), 0) + 1;
       await tx.insert(ruleVersions).values({ ...fields, version: next, isActive: false, createdBy: admin.id });
       await this.audit.log(tx, {
         adminId: admin.id,
@@ -51,7 +53,10 @@ export class RulesAdminService {
 
   async activate(admin: UserRow, version: number, reason?: string): Promise<RuleVersionDto> {
     await this.db.transaction(async (tx) => {
-      const [target] = await tx.select().from(ruleVersions).where(eq(ruleVersions.version, version)).for('update');
+      // Lock every row up front so two concurrent activations serialize instead of racing the
+      // active unique index (one would otherwise read stale isActive state after the other commits).
+      const rows = await tx.select().from(ruleVersions).for('update');
+      const target = rows.find((r) => r.version === version);
       if (!target) throw apiError(404, 'RULE_NOT_FOUND', `Версии v${version} нет`);
       if (target.isActive) return;
       await tx.update(ruleVersions).set({ isActive: false }).where(eq(ruleVersions.isActive, true));

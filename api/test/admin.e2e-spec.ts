@@ -324,6 +324,37 @@ describe('admin rules', () => {
       'rules_create',
     ]);
   });
+
+  it('serializes concurrent creates into distinct versions', async () => {
+    const { admin } = await loginAdmin(t);
+    const before = await admin.get('/api/admin/rules').expect(200);
+    const maxVersion = Math.max(0, ...before.body.map((r: { version: number }) => r.version));
+    const payload = { rtp: 0.95, minBet: 100, betStep: 100, startBalance: 10_000, dailyTarget: 10_000 };
+    const [a, b] = await Promise.all([
+      admin.post('/api/admin/rules').send(payload),
+      admin.post('/api/admin/rules').send(payload),
+    ]);
+    expect(a.status).toBe(201);
+    expect(b.status).toBe(201);
+    const versions = [a.body.version as number, b.body.version as number].sort((x, y) => x - y);
+    expect(versions).toEqual([maxVersion + 1, maxVersion + 2]);
+  });
+
+  it('serializes concurrent activations to exactly one active version', async () => {
+    const { admin } = await loginAdmin(t);
+    const payload = { rtp: 0.95, minBet: 100, betStep: 100, startBalance: 10_000, dailyTarget: 10_000 };
+    const first = await admin.post('/api/admin/rules').send(payload).expect(201);
+    const second = await admin.post('/api/admin/rules').send(payload).expect(201);
+    const [a, b] = await Promise.all([
+      admin.post(`/api/admin/rules/${first.body.version}/activate`).send({}),
+      admin.post(`/api/admin/rules/${second.body.version}/activate`).send({}),
+    ]);
+    expect([a.status, b.status].sort()).toEqual([200, 200]);
+    const list = await admin.get('/api/admin/rules').expect(200);
+    const active = list.body.filter((r: { isActive: boolean }) => r.isActive);
+    expect(active).toHaveLength(1);
+    expect([first.body.version, second.body.version]).toContain(active[0].version);
+  });
 });
 
 describe('admin registration limit', () => {
