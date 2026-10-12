@@ -17,6 +17,8 @@ describe('sentryOptions', () => {
   });
 
   it('omits an empty release', () => {
-    expect(sentryOptions({ dsn: 'https://key@bugsink.test/1', environment: 'development', release: '' })?.release).toBeUndefined();
+    expect(
+      sentryOptions({ dsn: 'https://key@bugsink.test/1', environment: 'development', release: '' })?.release,
+    ).toBeUndefined();
   });
 });

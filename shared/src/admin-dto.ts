@@ -1,11 +1,5 @@
 export type AdminActionKind =
-  | 'block'
-  | 'unblock'
-  | 'hide_status'
-  | 'show_status'
-  | 'rules_create'
-  | 'rules_activate'
-  | 'settings_update';
+  'block' | 'unblock' | 'hide_status' | 'show_status' | 'rules_create' | 'rules_activate' | 'settings_update';
 
 export interface AdminTicketDto {
   url: string;

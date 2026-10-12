@@ -58,7 +58,10 @@ export class SessionsService {
         ),
       );
     if (result.affectedRows !== 1) return null;
-    const [row] = await this.db.select({ userId: sessions.userId }).from(sessions).where(eq(sessions.tokenHash, tokenHash));
+    const [row] = await this.db
+      .select({ userId: sessions.userId })
+      .from(sessions)
+      .where(eq(sessions.tokenHash, tokenHash));
     return row?.userId ?? null;
   }
 }

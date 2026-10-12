@@ -12,7 +12,6 @@ export async function setAdmin(db: Db, nickname: string, value: boolean): Promis
   return true;
 }
 
-
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const args = process.argv.slice(2);
   const nickname = args.find((a) => !a.startsWith('--'));

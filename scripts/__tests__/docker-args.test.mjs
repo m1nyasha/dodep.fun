@@ -27,12 +27,18 @@ describe('dockerArgs', () => {
   it('builds locally with tag, latest and release', () => {
     assert.deepEqual(dockerArgs({ command: 'build', service: 'api', env, tag: 'abc123' }), [
       'build',
-      '--platform', 'linux/arm64',
-      '-f', 'docker/Dockerfile',
-      '--target', 'api',
-      '-t', 'reg.example.ru/dodep-api:abc123',
-      '-t', 'reg.example.ru/dodep-api:latest',
-      '--build-arg', 'SENTRY_RELEASE=abc123',
+      '--platform',
+      'linux/arm64',
+      '-f',
+      'docker/Dockerfile',
+      '--target',
+      'api',
+      '-t',
+      'reg.example.ru/dodep-api:abc123',
+      '-t',
+      'reg.example.ru/dodep-api:latest',
+      '--build-arg',
+      'SENTRY_RELEASE=abc123',
       '.',
     ]);
   });
@@ -50,7 +56,11 @@ describe('dockerArgs', () => {
   });
 
   it('bakes Sentry settings only into admin', () => {
-    const withDsn = { ADMIN_SENTRY_DSN: 'https://k@bugsink/2', SENTRY_ENVIRONMENT: 'production', ADMIN_SITE_URL: 'https://dodep.fun' };
+    const withDsn = {
+      ADMIN_SENTRY_DSN: 'https://k@bugsink/2',
+      SENTRY_ENVIRONMENT: 'production',
+      ADMIN_SITE_URL: 'https://dodep.fun',
+    };
     const admin = dockerArgs({ command: 'build', service: 'admin', env: withDsn, tag: 't' });
     assert.ok(admin.includes('NUXT_PUBLIC_SENTRY_DSN=https://k@bugsink/2'));
     assert.ok(admin.includes('NUXT_PUBLIC_SENTRY_ENVIRONMENT=production'));

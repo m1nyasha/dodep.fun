@@ -24,7 +24,9 @@ describe('ruleInputErrors', () => {
   });
 
   it('requires the minimum bet to be a multiple of the step', () => {
-    expect(ruleInputErrors({ ...valid, minBet: 150 })).toEqual({ minBet: 'Минимальная ставка должна быть кратна шагу' });
+    expect(ruleInputErrors({ ...valid, minBet: 150 })).toEqual({
+      minBet: 'Минимальная ставка должна быть кратна шагу',
+    });
   });
 
   it('requires the start balance to cover the minimum bet', () => {
