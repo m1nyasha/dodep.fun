@@ -3,6 +3,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { WsAdapter } from '@nestjs/platform-ws';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
+import { setupAdminDocs } from './admin/admin-docs.js';
 import { AuthModule } from './auth/auth.module.js';
 import { config } from './config.js';
 import { FeedModule } from './feed/feed.module.js';
@@ -27,4 +28,5 @@ export function setupApp(app: NestExpressApplication): void {
     { include: PUBLIC_DOC_MODULES },
   );
   SwaggerModule.setup('api/docs', app, doc);
+  setupAdminDocs(app);
 }

@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, gt } from 'drizzle-orm';
+import { and, eq, gt, isNull } from 'drizzle-orm';
 import { DB, type Db } from '../db/db.module.js';
 import { sessions, users, type UserRow } from '../db/schema.js';
 
@@ -42,5 +42,23 @@ export class SessionsService {
 
   async revokeAllForUser(userId: string): Promise<void> {
     await this.db.delete(sessions).where(eq(sessions.userId, userId));
+  }
+
+  async consumeTicket(token: string): Promise<string | null> {
+    const tokenHash = this.hashToken(token);
+    const [result] = await this.db
+      .update(sessions)
+      .set({ usedAt: new Date() })
+      .where(
+        and(
+          eq(sessions.tokenHash, tokenHash),
+          eq(sessions.kind, 'admin_ticket'),
+          isNull(sessions.usedAt),
+          gt(sessions.expiresAt, new Date()),
+        ),
+      );
+    if (result.affectedRows !== 1) return null;
+    const [row] = await this.db.select({ userId: sessions.userId }).from(sessions).where(eq(sessions.tokenHash, tokenHash));
+    return row?.userId ?? null;
   }
 }
