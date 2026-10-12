@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { sessions, users } from '../src/db/schema.js';
+import { ruleVersions, sessions, users } from '../src/db/schema.js';
 import { createTestApp, PASSWORD, register, setUser, type TestApp } from './helpers.js';
 
 async function ticketFor(t: TestApp, nickname: string) {
@@ -269,5 +269,59 @@ describe('admin accounts and statuses', () => {
 
     await admin.post('/api/admin/statuses/northstar/show').send({ reason: 'ошибка' }).expect(200);
     expect((await request(t.server).get('/api/players/northstar').expect(200)).body.status).toBe('Сначала думай');
+  });
+});
+
+describe('admin rules', () => {
+  let t: TestApp;
+  beforeAll(async () => {
+    t = await createTestApp();
+  });
+  beforeEach(() => t.reset());
+  afterAll(async () => {
+    await t.db.update(ruleVersions).set({ isActive: false }).where(eq(ruleVersions.isActive, true));
+    await t.db.update(ruleVersions).set({ isActive: true }).where(eq(ruleVersions.version, 1));
+    await t.close();
+  });
+
+  it('creates an inactive version and activates it for new rounds only', async () => {
+    const { admin } = await loginAdmin(t);
+    const player = await register(t.server, 'ply1');
+    const before = await player.post('/api/rounds').send({ bet: 100 }).expect(201);
+
+    await admin
+      .post('/api/admin/rules')
+      .send({ rtp: 0.95, minBet: 150, betStep: 100, startBalance: 10_000, dailyTarget: 10_000 })
+      .expect(400);
+    const created = await admin
+      .post('/api/admin/rules')
+      .send({ rtp: 0.95, minBet: 200, betStep: 100, startBalance: 10_000, dailyTarget: 10_000, reason: 'эксперимент' })
+      .expect(201);
+    const v = created.body.version as number;
+    expect(created.body).toMatchObject({ rtp: 0.95, minBet: 200, isActive: false, createdBy: 'boss' });
+
+    await admin.post(`/api/admin/rules/${v}/activate`).send({}).expect(200);
+    const list = await admin.get('/api/admin/rules').expect(200);
+    expect(
+      list.body.filter((r: { isActive: boolean }) => r.isActive).map((r: { version: number }) => r.version),
+    ).toEqual([v]);
+    expect((await request(t.server).get('/api/rules').expect(200)).body).toMatchObject({
+      version: v,
+      rtp: 0.95,
+      minBet: 200,
+    });
+
+    await player.post(`/api/rounds/${before.body.round.id}/open`).send({ cell: 10 }).expect(200);
+    const cashed = await player.post(`/api/rounds/${before.body.round.id}/cash-out`).expect(200);
+    expect(cashed.body.round).toMatchObject({ ruleVersion: 1, rtp: 0.973, payout: 122 });
+    const next = await player.post('/api/rounds').send({ bet: 200 }).expect(201);
+    expect(next.body.round.ruleVersion).toBe(v);
+
+    expect((await admin.post('/api/admin/rules/999/activate').send({}).expect(404)).body.code).toBe('RULE_NOT_FOUND');
+    const audit = await admin.get('/api/admin/audit').expect(200);
+    expect(audit.body.items.map((a: { action: string }) => a.action).slice(0, 2)).toEqual([
+      'rules_activate',
+      'rules_create',
+    ]);
   });
 });
