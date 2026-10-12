@@ -1,15 +1,43 @@
-*.log
-.DS_Store
+# dependencies
+node_modules/
+.pnpm-store/
+
+# build output
+dist/
+.output/
+.nuxt/
+.nitro/
+.data/
+.cache/
+*.tsbuildinfo
+
+# tests & tooling caches
+coverage/
+.eslintcache
+.stylelintcache
+.vitest/
+
+# env
 .env
-.env.backup
-.env.production
-/.codex
-/.cursor/
+.env.*
+!.env.example
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# os
+.DS_Store
+Thumbs.db
+
+# editors & agents
 /.idea
-/.nova
 /.vscode
 /.zed
-/auth.json
-Homestead.json
-Homestead.yaml
-Thumbs.db
+/.nova
+/.cursor/
+/.codex
+
+# superpowers working docs
+docs/superpowers/
