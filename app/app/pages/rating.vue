@@ -20,5 +20,7 @@ const { data: top } = await useAsyncData('podium', () =>
     </PageIntro>
     <RatingPodium :players="top?.items ?? []" :me="me?.nickname ?? null" />
     <RatingLeaderboardTable />
+    <RatingNumbers />
+    <RatingAiDotplot />
   </div>
 </template>
