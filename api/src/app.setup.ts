@@ -6,9 +6,10 @@ import cookieParser from 'cookie-parser';
 import { AuthModule } from './auth/auth.module.js';
 import { config } from './config.js';
 import { HealthModule } from './health/health.module.js';
+import { PlayersModule } from './players/players.module.js';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type -- matches @nestjs/swagger's `include?: Function[]`
-export const PUBLIC_DOC_MODULES: Function[] = [HealthModule, AuthModule];
+export const PUBLIC_DOC_MODULES: Function[] = [HealthModule, AuthModule, PlayersModule];
 
 export function setupApp(app: NestExpressApplication): void {
   app.setGlobalPrefix('api');
