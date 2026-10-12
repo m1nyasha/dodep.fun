@@ -32,7 +32,7 @@ svg {
 }
 
 .logo-mark:hover .hot,
-:global(a:hover) .hot {
+a:hover .hot {
   animation: blink 0.7s steps(2) 2;
 }
 

@@ -34,7 +34,7 @@ defineProps<{ stamp: { kind: 'win' | 'loss'; big: string; small: string } | null
   transition: opacity 0.25s;
 }
 
-:global(.arena:hover) .stamp {
+.arena:hover .stamp {
   opacity: 0.1;
 }
 
