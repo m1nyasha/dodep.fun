@@ -97,7 +97,7 @@ describe('rounds', () => {
 
     const me = await agent.get('/api/me').expect(200);
     expect(me.body).toMatchObject({ balance: 10_054, wagered: 100, payout: 154, net: 54, roundsCount: 1 });
-    const entries = await t.db.select().from(ledger).orderBy(ledger.createdAt);
+    const entries = await t.db.select().from(ledger).orderBy(ledger.createdAt, ledger.id);
     expect(entries.map((e) => [e.kind, e.amount, e.balanceAfter])).toEqual([
       ['signup', 10_000, 10_000],
       ['bet', -100, 9_900],
