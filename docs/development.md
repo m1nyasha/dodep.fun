@@ -55,6 +55,24 @@ pnpm dev
 
 e2e-тесты пересоздают базу `dodep_test` при каждом запуске: `pnpm test:e2e` (MySQL должна быть поднята).
 
+## Админка
+
+Админка — отдельное приложение на http://localhost:4300 (в проде — `admin.dodep.fun`). Вход только по одноразовой ссылке с публичного сайта.
+
+1. В `api/.env` должно быть `ADMIN_URL=http://localhost:4300`.
+2. Зарегистрируйтесь на http://localhost:4100.
+3. Выдайте себе права: `pnpm --filter @dodep/api admin:grant <ник>` (снять: `… admin:grant <ник> --revoke`).
+4. Обновите страницу сайта — в шапке появится «Админка». Ссылка действует 60 секунд и только один раз.
+
+Админская сессия — cookie `admin_sid` на `Path=/api/admin`, 12 часов. Публичная сессия к админскому API не подходит.
+
+- Swagger админки: http://localhost:4300/api/admin/docs (только после входа)
+- Публичный Swagger: http://localhost:4200/api/docs
+
+Локально app и admin на одном хосте `localhost`, а cookie не различают порты: `sid` уходит и в admin, но админский API её игнорирует. В проде поддомены разные, cookie host-only.
+
+В проде права выдаются так же, внутри контейнера API: `node dist/cli/admin-grant.js <ник>`.
+
 ## Фронтенд
 
 - `ui/` — Nuxt layer: токены (`ui/app/assets/css/tokens.css`), базовые стили, компоненты `Ui*`, `useApi`, `useToast`, форматирование. Подключается через `extends: ['../ui']`.
