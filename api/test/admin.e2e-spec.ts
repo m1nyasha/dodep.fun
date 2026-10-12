@@ -168,3 +168,106 @@ describe('admin overview and audit', () => {
     ]);
   });
 });
+
+describe('admin accounts and statuses', () => {
+  let t: TestApp;
+  beforeAll(async () => {
+    t = await createTestApp();
+  });
+  beforeEach(() => t.reset());
+  afterAll(() => t.close());
+
+  it('searches accounts', async () => {
+    const { admin } = await loginAdmin(t);
+    await register(t.server, 'kletka17');
+    await register(t.server, 'mono');
+    const { body } = await admin.get('/api/admin/accounts?q=LETK').expect(200);
+    expect(body.total).toBe(1);
+    expect(body.items[0]).toMatchObject({
+      nickname: 'kletka17',
+      isAi: false,
+      isAdmin: false,
+      balance: 10_000,
+      blockedAt: null,
+    });
+  });
+
+  it('shows fingerprints and accounts sharing an IP or client hash', async () => {
+    const { admin } = await loginAdmin(t);
+    await register(t.server, 'main', { ip: '10.5.5.5' });
+    await register(t.server, 'twin', { ip: '10.5.5.5' });
+    await register(t.server, 'clone', { ip: '10.6.6.6' });
+    await request(t.server)
+      .post('/api/auth/login')
+      .send({ nickname: 'main', password: 'password123', clientHash: 'c'.repeat(64) })
+      .expect(204);
+    await request(t.server)
+      .post('/api/auth/login')
+      .send({ nickname: 'clone', password: 'password123', clientHash: 'c'.repeat(64) })
+      .expect(204);
+
+    const { body } = await admin.get('/api/admin/accounts/main').expect(200);
+    expect(body.account.nickname).toBe('main');
+    expect(body.fingerprints.map((f: { event: string }) => f.event).sort()).toEqual(['login', 'register']);
+    expect(body.related).toEqual(
+      expect.arrayContaining([
+        { nickname: 'twin', via: 'ip', value: '10.5.5.5', blocked: false },
+        { nickname: 'clone', via: 'client', value: 'c'.repeat(64), blocked: false },
+      ]),
+    );
+    expect((await admin.get('/api/admin/accounts/ghost').expect(404)).body.code).toBe('ACCOUNT_NOT_FOUND');
+  });
+
+  it('blocks with a reason, revokes every session and hides from the leaderboard', async () => {
+    const { admin } = await loginAdmin(t);
+    const victim = await register(t.server, 'tormoz');
+    await admin.post('/api/admin/accounts/tormoz/block').send({ reason: '' }).expect(400);
+    const { body } = await admin
+      .post('/api/admin/accounts/tormoz/block')
+      .send({ reason: 'спам статусами' })
+      .expect(200);
+    expect(body).toMatchObject({ nickname: 'tormoz', blockReason: 'спам статусами' });
+    expect(body.blockedAt).not.toBeNull();
+
+    await victim.get('/api/me').expect(401);
+    const board = await request(t.server).get('/api/leaderboard').expect(200);
+    expect(board.body.items.map((p: { nickname: string }) => p.nickname)).not.toContain('tormoz');
+
+    const audit = await admin.get('/api/admin/audit').expect(200);
+    expect(audit.body.items[0]).toMatchObject({ action: 'block', target: 'tormoz', reason: 'спам статусами' });
+
+    await admin.post('/api/admin/accounts/tormoz/unblock').send({ reason: 'разобрались' }).expect(200);
+    await request(t.server).post('/api/auth/login').send({ nickname: 'tormoz', password: 'password123' }).expect(204);
+  });
+
+  it('revokes another admin session on block and forbids blocking yourself', async () => {
+    const { admin } = await loginAdmin(t, 'boss');
+    const { admin: other } = await loginAdmin(t, 'deputy');
+    await other.get('/api/admin/me').expect(200);
+    await admin.post('/api/admin/accounts/deputy/block').send({ reason: 'утечка' }).expect(200);
+    await other.get('/api/admin/me').expect(401);
+    expect((await admin.post('/api/admin/accounts/boss/block').send({ reason: 'x' }).expect(400)).body.code).toBe(
+      'SELF_ACTION',
+    );
+  });
+
+  it('hides and shows a public status with a reason', async () => {
+    const { admin } = await loginAdmin(t);
+    const top = await register(t.server, 'northstar');
+    await setUser(t.db, 'northstar', { balance: 90_000 });
+    await top.put('/api/me/status').send({ text: 'Сначала думай' }).expect(200);
+
+    const list = await admin.get('/api/admin/statuses').expect(200);
+    expect(list.body).toEqual([
+      expect.objectContaining({ nickname: 'northstar', text: 'Сначала думай', hiddenAt: null, humanRank: 1 }),
+    ]);
+
+    await admin.post('/api/admin/statuses/northstar/hide').send({ reason: '' }).expect(400);
+    const hidden = await admin.post('/api/admin/statuses/northstar/hide').send({ reason: 'оскорбление' }).expect(200);
+    expect(hidden.body.hiddenAt).not.toBeNull();
+    expect((await request(t.server).get('/api/players/northstar').expect(200)).body.status).toBeNull();
+
+    await admin.post('/api/admin/statuses/northstar/show').send({ reason: 'ошибка' }).expect(200);
+    expect((await request(t.server).get('/api/players/northstar').expect(200)).body.status).toBe('Сначала думай');
+  });
+});
