@@ -3,7 +3,7 @@ import { SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/web
 import { WebSocket, type WebSocketServer as WsServer } from 'ws';
 
 // ponytail: рассылка из памяти процесса — один экземпляр API; при нескольких репликах нужен Redis pub/sub.
-@WebSocketGateway({ path: '/api/ws' })
+@WebSocketGateway({ path: '/api/ws', maxPayload: 4096 })
 export class FeedGateway {
   @WebSocketServer()
   private readonly server?: WsServer;

@@ -45,4 +45,19 @@ describe('feed', () => {
     expect(await message).toEqual({ event: 'pong' });
     ws.close();
   });
+
+  it('disconnects a client sending an oversized frame but keeps ping/pong working for others', async () => {
+    const bad = new WebSocket(url);
+    await new Promise((resolve) => bad.once('open', resolve));
+    const closed = new Promise<number>((resolve) => bad.once('close', (code) => resolve(code)));
+    bad.send('x'.repeat(5_000));
+    expect(await closed).toBe(1009);
+
+    const ok = new WebSocket(url);
+    await new Promise((resolve) => ok.once('open', resolve));
+    const message = nextMessage(ok);
+    ok.send(JSON.stringify({ event: 'ping' }));
+    expect(await message).toEqual({ event: 'pong' });
+    ok.close();
+  });
 });
