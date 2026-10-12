@@ -364,3 +364,22 @@ describe('admin registration limit', () => {
     });
   });
 });
+
+describe('admin:grant', () => {
+  let t: TestApp;
+  beforeAll(async () => {
+    t = await createTestApp();
+  });
+  beforeEach(() => t.reset());
+  afterAll(() => t.close());
+
+  it('grants and revokes the admin flag by nickname', async () => {
+    const { setAdmin } = await import('../src/cli/admin-grant.js');
+    const user = await register(t.server, 'Kletka17');
+    expect(await setAdmin(t.db, 'kletka17', true)).toBe(true);
+    expect((await user.get('/api/me').expect(200)).body.adminUrl).toBe('http://admin.test');
+    expect(await setAdmin(t.db, 'kletka17', false)).toBe(true);
+    expect((await user.get('/api/me').expect(200)).body.adminUrl).toBeNull();
+    expect(await setAdmin(t.db, 'ghost', true)).toBe(false);
+  });
+});
