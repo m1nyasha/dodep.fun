@@ -6,6 +6,7 @@ export default tseslint.config(
   { ignores: ['**/dist/**', '**/coverage/**', 'prototype/**', 'app/**', 'admin/**', 'ui/**'] },
   js.configs.recommended,
   ...tseslint.configs.strict,
+  { files: ['scripts/**/*.mjs'], languageOptions: { globals: { process: 'readonly', console: 'readonly' } } },
   prettier,
   {
     // NestJS modules/controllers are classes whose only purpose is the decorator.

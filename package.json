@@ -9,14 +9,16 @@
   "scripts": {
     "build:shared": "pnpm --filter @dodep/shared build",
     "dev": "pnpm build:shared && pnpm --parallel --filter @dodep/shared --filter @dodep/api --filter @dodep/app dev",
-    "lint": "pnpm -r lint",
+    "lint": "pnpm -r lint && eslint scripts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "pnpm build:shared && pnpm -r typecheck",
-    "test": "pnpm build:shared && pnpm -r test",
+    "test": "pnpm build:shared && pnpm -r test && node --test \"scripts/__tests__/*.test.mjs\"",
     "test:e2e": "pnpm build:shared && pnpm --filter @dodep/api test:e2e",
     "db:up": "docker compose -f docker/docker-compose.dev.yml --env-file .env up -d --wait",
-    "db:down": "docker compose -f docker/docker-compose.dev.yml --env-file .env down"
+    "db:down": "docker compose -f docker/docker-compose.dev.yml --env-file .env down",
+    "docker:build": "node scripts/docker.mjs build",
+    "docker:push": "node scripts/docker.mjs push"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
