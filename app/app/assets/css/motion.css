@@ -1,0 +1,22 @@
+.particle {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 8px;
+  height: 8px;
+  margin: -4px;
+  border-radius: 2px;
+  background: var(--coin);
+  pointer-events: none;
+  z-index: 80;
+}
+
+.ui-coin.fly {
+  position: fixed;
+  left: 0;
+  top: 0;
+  margin: -10px;
+  font-size: 20px;
+  z-index: 90;
+  pointer-events: none;
+}
