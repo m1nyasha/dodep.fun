@@ -7,4 +7,8 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.strict,
   prettier,
+  {
+    // NestJS modules/controllers are classes whose only purpose is the decorator.
+    rules: { '@typescript-eslint/no-extraneous-class': ['error', { allowWithDecorator: true }] },
+  },
 );

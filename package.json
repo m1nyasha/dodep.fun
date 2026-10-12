@@ -8,11 +8,13 @@
   },
   "scripts": {
     "build:shared": "pnpm --filter @dodep/shared build",
+    "dev": "pnpm build:shared && pnpm --parallel --filter @dodep/shared --filter @dodep/api dev",
     "lint": "pnpm -r lint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test",
+    "typecheck": "pnpm build:shared && pnpm -r typecheck",
+    "test": "pnpm build:shared && pnpm -r test",
+    "test:e2e": "pnpm build:shared && pnpm --filter @dodep/api test:e2e",
     "db:up": "docker compose -f docker/docker-compose.dev.yml --env-file .env up -d --wait",
     "db:down": "docker compose -f docker/docker-compose.dev.yml --env-file .env down"
   },
