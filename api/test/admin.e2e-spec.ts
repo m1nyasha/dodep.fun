@@ -414,3 +414,42 @@ describe('admin:grant', () => {
     expect(await setAdmin(t.db, 'ghost', true)).toBe(false);
   });
 });
+
+describe('admin export', () => {
+  let t: TestApp;
+  beforeAll(async () => {
+    t = await createTestApp();
+  });
+  beforeEach(() => t.reset());
+  afterAll(() => t.close());
+
+  it('exports finished rounds and their actions as CSV and JSON', async () => {
+    const { admin } = await loginAdmin(t);
+    const player = await register(t.server, 'playerone');
+    const { body } = await player.post('/api/rounds').send({ bet: 100 }).expect(201);
+    await player.post(`/api/rounds/${body.round.id}/open`).send({ cell: 10 }).expect(200);
+    await player.post(`/api/rounds/${body.round.id}/open`).send({ cell: 0 }).expect(200);
+    await player.post('/api/rounds').send({ bet: 100 }).expect(201);
+
+    const csv = await admin.get('/api/admin/export?kind=rounds&format=csv').expect(200);
+    expect(csv.get('content-type')).toMatch(/text\/csv/);
+    expect(csv.get('content-disposition')).toMatch(/attachment; filename="dodep-rounds-/);
+    const { BOM } = await import('../src/admin/csv.js');
+    const lines = csv.text.replace(BOM, '').trim().split('\r\n');
+    expect(lines[0]).toBe(
+      'id,nickname,isAi,aiType,experimentId,ruleVersion,roundNo,bet,balanceBefore,balanceAfter,status,endReason,safeCount,multiplier,payout,hitCell,startedAt,finishedAt',
+    );
+    expect(lines).toHaveLength(2);
+
+    const actions = await admin.get('/api/admin/export?kind=actions&format=json').expect(200);
+    expect(actions.body.map((a: { seq: number; result: string }) => [a.seq, a.result])).toEqual([
+      [1, 'safe'],
+      [2, 'mine'],
+    ]);
+    expect((await admin.get('/api/admin/export?kind=rounds&format=json&isAi=true').expect(200)).body).toEqual([]);
+    expect(
+      (await admin.get('/api/admin/export?kind=rounds&format=json&from=2000-01-01&to=2000-01-02').expect(200)).body,
+    ).toEqual([]);
+    await admin.get('/api/admin/export?from=yesterday').expect(400);
+  });
+});

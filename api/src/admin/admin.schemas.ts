@@ -28,3 +28,14 @@ export const limitSchema = z.object({
   windowHours: z.number().int().min(1).max(720),
   reason: z.string().trim().max(255).optional(),
 });
+
+export const exportSchema = z.object({
+  kind: z.enum(['rounds', 'actions']).default('rounds'),
+  format: z.enum(['csv', 'json']).default('csv'),
+  experimentId: z.uuid().optional(),
+  isAi: z.enum(['true', 'false']).optional(),
+  from: z.iso.date().optional(),
+  to: z.iso.date().optional(),
+  limit: z.coerce.number().int().min(1).max(100_000).default(50_000),
+});
+export type ExportQuery = z.infer<typeof exportSchema>;
