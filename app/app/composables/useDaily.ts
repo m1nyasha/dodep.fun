@@ -8,6 +8,7 @@ const duration = (ms: number) => {
 
 export function useDaily() {
   const { me } = useMe();
+  const { round } = useRound();
   const api = useApi();
   const toast = useToast();
   const sfx = useSfx();
@@ -15,7 +16,10 @@ export function useDaily() {
 
   const available = computed(
     () =>
-      !!me.value && me.value.balance < me.value.dailyTarget && now.value.getTime() >= Date.parse(me.value.nextDailyAt),
+      !!me.value &&
+      round.value?.status !== 'active' &&
+      me.value.balance < me.value.dailyTarget &&
+      now.value.getTime() >= Date.parse(me.value.nextDailyAt),
   );
 
   const text = computed(() => {

@@ -107,6 +107,18 @@ describe('players', () => {
     expect((await agent.post('/api/me/daily').expect(400)).body.code).toBe('DAILY_UNAVAILABLE');
   });
 
+  it('refuses the daily claim while a round is active even with a zero balance', async () => {
+    const agent = await register(t.server, 'exploiter');
+    await setUser(t.db, 'exploiter', { lastDailyAt: new Date(Date.now() - 3 * 24 * 3_600_000) });
+    await agent.post('/api/rounds').send({ bet: 10_000 }).expect(201);
+
+    const claim = await agent.post('/api/me/daily').expect(400);
+    expect(claim.body.code).toBe('DAILY_UNAVAILABLE');
+
+    const me = await agent.get('/api/me').expect(200);
+    expect(me.body.balance).toBe(0);
+  });
+
   // NOTE: brief used 2-char nicknames (s1..s6), which fail the 3-20 char nickname regex. Renamed to st1..st6.
   it('lets only top-5 humans publish a cleaned status', async () => {
     const names = ['st1', 'st2', 'st3', 'st4', 'st5', 'st6'];

@@ -1,10 +1,10 @@
 import { isDailyAvailable, nextDailyAt, normalizeStatus, type DailyClaimDto, type MeDto } from '@dodep/shared';
 import { Inject, Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { apiError } from '../common/api-error.js';
 import { config } from '../config.js';
 import { DB, type Db } from '../db/db.module.js';
-import { ledger, statusHistory, users, type UserRow } from '../db/schema.js';
+import { ledger, rounds, statusHistory, users, type UserRow } from '../db/schema.js';
 import { RulesService } from '../game/rules.service.js';
 import { TOP_HUMANS } from './ranking.js';
 import { PlayersService } from './players.service.js';
@@ -42,7 +42,14 @@ export class MeService {
       if (!user) throw apiError(401, 'UNAUTHORIZED', 'Нужно войти');
       const rule = await this.rules.active(tx);
       const now = new Date();
-      if (!isDailyAvailable({ balance: user.balance, target: rule.dailyTarget, lastClaimAt: user.lastDailyAt, now }))
+      const [activeRound] = await tx
+        .select({ id: rounds.id })
+        .from(rounds)
+        .where(and(eq(rounds.userId, userId), eq(rounds.status, 'active')));
+      if (
+        activeRound ||
+        !isDailyAvailable({ balance: user.balance, target: rule.dailyTarget, lastClaimAt: user.lastDailyAt, now })
+      )
         throw apiError(400, 'DAILY_UNAVAILABLE', 'Ежедневная выдача пока недоступна');
       const added = rule.dailyTarget - user.balance;
       await tx.update(users).set({ balance: rule.dailyTarget, lastDailyAt: now }).where(eq(users.id, userId));

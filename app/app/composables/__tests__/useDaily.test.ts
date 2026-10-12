@@ -1,8 +1,9 @@
-import type { MeDto } from '@dodep/shared';
+import type { ActiveRoundDto, MeDto } from '@dodep/shared';
 import { registerEndpoint } from '@nuxt/test-utils/runtime';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useDaily } from '../useDaily';
 import { useMe } from '../useMe';
+import { useRound } from '../useRound';
 
 const base: MeDto = {
   nickname: 'zhenya',
@@ -23,6 +24,7 @@ const base: MeDto = {
 describe('useDaily', () => {
   beforeEach(() => {
     useMe().me.value = { ...base };
+    useRound().reset();
   });
 
   it('is available when the balance is low and the time has come', () => {
@@ -36,6 +38,25 @@ describe('useDaily', () => {
     const { available, text } = useDaily();
     expect(available.value).toBe(false);
     expect(text.value).toBe('Следующая выдача через 1 ч 31 мин.');
+  });
+
+  it('is unavailable while a round is active, even with a low balance and open window', () => {
+    const activeRound: ActiveRoundDto = {
+      id: 'r1',
+      roundNo: 1,
+      bet: 100,
+      hash: 'h',
+      ruleVersion: 1,
+      rtp: 0.973,
+      opened: [],
+      safeCount: 0,
+      startedAt: new Date().toISOString(),
+      status: 'active',
+      multiplier: 1,
+      potentialPayout: 100,
+    };
+    useRound().round.value = activeRound;
+    expect(useDaily().available.value).toBe(false);
   });
 
   it('is closed at the target balance and for guests', () => {
