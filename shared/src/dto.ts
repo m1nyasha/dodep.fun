@@ -11,7 +11,12 @@ export type ApiErrorCode =
   | 'CASH_OUT_UNAVAILABLE'
   | 'DAILY_UNAVAILABLE'
   | 'STATUS_FORBIDDEN'
-  | 'PLAYER_NOT_FOUND';
+  | 'PLAYER_NOT_FOUND'
+  | 'ADMIN_ONLY'
+  | 'TICKET_INVALID'
+  | 'ACCOUNT_NOT_FOUND'
+  | 'RULE_NOT_FOUND'
+  | 'SELF_ACTION';
 
 export interface ApiError {
   code: ApiErrorCode;
