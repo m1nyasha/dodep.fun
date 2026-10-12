@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { authFingerprints, settings } from '../src/db/schema.js';
+import { authFingerprints, sessions, settings, users } from '../src/db/schema.js';
 import { createTestApp, PASSWORD, register, setUser, type TestApp } from './helpers.js';
 
 describe('auth', () => {
@@ -108,6 +108,22 @@ describe('auth', () => {
     const denied = await t.db.select().from(authFingerprints).where(eq(authFingerprints.event, 'register_denied'));
     expect(denied).toHaveLength(1);
     expect(denied[0]).toMatchObject({ ip: '10.1.1.1', userId: null });
+  });
+
+  it('deletes the user expired sessions on a new login', async () => {
+    await register(t.server, 'stale_sam');
+    const [user] = await t.db.select().from(users).where(eq(users.nickname, 'stale_sam'));
+    await t.db.insert(sessions).values({
+      userId: user!.id,
+      kind: 'user',
+      tokenHash: 'expired-hash',
+      expiresAt: new Date(Date.now() - 60_000),
+    });
+
+    await request(t.server).post('/api/auth/login').send({ nickname: 'stale_sam', password: PASSWORD }).expect(204);
+
+    const left = await t.db.select().from(sessions).where(eq(sessions.tokenHash, 'expired-hash'));
+    expect(left).toHaveLength(0);
   });
 
   it('stores a login fingerprint with client hash', async () => {

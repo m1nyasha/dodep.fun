@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, gt, isNull } from 'drizzle-orm';
+import { and, eq, gt, isNull, lt } from 'drizzle-orm';
 import { DB, type Db } from '../db/db.module.js';
 import { sessions, users, type UserRow } from '../db/schema.js';
 
@@ -15,6 +15,8 @@ export class SessionsService {
   }
 
   async create(userId: string, kind: SessionKind, ttlMs: number): Promise<string> {
+    // ponytail: prune this user's expired rows on every new session instead of a cleanup timer — cheap, no scheduler needed.
+    await this.db.delete(sessions).where(and(eq(sessions.userId, userId), lt(sessions.expiresAt, new Date())));
     const token = randomBytes(32).toString('base64url');
     await this.db.insert(sessions).values({
       userId,
