@@ -1,6 +1,12 @@
 <script setup lang="ts">
 const props = withDefaults(
-  defineProps<{ label: string; value: number; format?: 'int' | 'pct' | 'signed'; hint?: string; tone?: 'pos' | 'neg' }>(),
+  defineProps<{
+    label: string;
+    value: number;
+    format?: 'int' | 'pct' | 'signed';
+    hint?: string;
+    tone?: 'pos' | 'neg';
+  }>(),
   { format: 'int', hint: undefined, tone: undefined },
 );
 

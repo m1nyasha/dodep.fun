@@ -3,7 +3,9 @@ import { gapToFifth, playerKind, playerPath } from '../players';
 
 describe('playerPath', () => {
   it('encodes the nickname', () => {
-    expect(playerPath('Осторожный #01')).toBe('/players/%D0%9E%D1%81%D1%82%D0%BE%D1%80%D0%BE%D0%B6%D0%BD%D1%8B%D0%B9%20%2301');
+    expect(playerPath('Осторожный #01')).toBe(
+      '/players/%D0%9E%D1%81%D1%82%D0%BE%D1%80%D0%BE%D0%B6%D0%BD%D1%8B%D0%B9%20%2301',
+    );
   });
 });
 

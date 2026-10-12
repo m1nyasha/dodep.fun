@@ -24,12 +24,18 @@ describe('AuthForm', () => {
   it('shows the registration limit message in the common block', async () => {
     registerEndpoint('/api/auth/register', {
       method: 'POST',
-      handler: () => json(403, { code: 'REGISTRATION_UNAVAILABLE', message: 'Регистрация пока недоступна, повторите попытку позже' }),
+      handler: () =>
+        json(403, {
+          code: 'REGISTRATION_UNAVAILABLE',
+          message: 'Регистрация пока недоступна, повторите попытку позже',
+        }),
     });
     const w = await fill('register', 'kletka17', 'password123');
     await w.get('input[name="agree"]').setValue(true);
     await w.get('form').trigger('submit');
-    await vi.waitFor(() => expect(w.get('.form-error').text()).toBe('Регистрация пока недоступна, повторите попытку позже'));
+    await vi.waitFor(() =>
+      expect(w.get('.form-error').text()).toBe('Регистрация пока недоступна, повторите попытку позже'),
+    );
     expect(w.emitted('done')).toBeUndefined();
   });
 

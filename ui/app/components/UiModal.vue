@@ -13,7 +13,8 @@ watch(
   async (value) => {
     if (!value) return;
     await nextTick();
-    const target = card.value?.querySelector<HTMLElement>('input, textarea, select') ?? card.value?.querySelector('button');
+    const target =
+      card.value?.querySelector<HTMLElement>('input, textarea, select') ?? card.value?.querySelector('button');
     target?.focus();
   },
   { immediate: true },

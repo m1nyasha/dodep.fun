@@ -5,7 +5,16 @@ const cells = [0, 1, 2].flatMap((y) => [0, 1, 2].map((x) => ({ x: x * 5, y: y * 
 <template>
   <span class="logo-mark">
     <svg viewBox="0 0 14 14" aria-hidden="true">
-      <rect v-for="c in cells" :key="`${c.x}-${c.y}`" :x="c.x" :y="c.y" width="4" height="4" rx="1" :class="{ hot: c.hot }" />
+      <rect
+        v-for="c in cells"
+        :key="`${c.x}-${c.y}`"
+        :x="c.x"
+        :y="c.y"
+        width="4"
+        height="4"
+        rx="1"
+        :class="{ hot: c.hot }"
+      />
     </svg>
   </span>
 </template>

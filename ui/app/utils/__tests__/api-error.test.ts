@@ -15,13 +15,19 @@ describe('toApiFetchError', () => {
   });
 
   it('falls back for empty bodies', () => {
-    expect(toApiFetchError(502, undefined)).toMatchObject({ status: 502, code: undefined, message: 'Что-то пошло не так' });
+    expect(toApiFetchError(502, undefined)).toMatchObject({
+      status: 502,
+      code: undefined,
+      message: 'Что-то пошло не так',
+    });
   });
 });
 
 describe('apiErrorMessage', () => {
   it('uses the API message or a network fallback', () => {
-    expect(apiErrorMessage(new ApiFetchError(400, 'Недостаточно монет', 'INSUFFICIENT_BALANCE'))).toBe('Недостаточно монет');
+    expect(apiErrorMessage(new ApiFetchError(400, 'Недостаточно монет', 'INSUFFICIENT_BALANCE'))).toBe(
+      'Недостаточно монет',
+    );
     expect(apiErrorMessage(new TypeError('fetch failed'))).toBe('Сервер недоступен, попробуй ещё раз');
   });
 });

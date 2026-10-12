@@ -40,7 +40,9 @@ onKeyStroke('Escape', () => (open.value = false));
       <span>{{ fmt(shown) }}</span>
       <i v-if="daily.available.value" class="dot" />
     </button>
-    <span v-if="delta" :key="delta.id" class="delta mono" :class="delta.value > 0 ? 'pos' : 'neg'">{{ signed(delta.value) }}</span>
+    <span v-if="delta" :key="delta.id" class="delta mono" :class="delta.value > 0 ? 'pos' : 'neg'">{{
+      signed(delta.value)
+    }}</span>
     <LayoutWalletPopover v-if="open" />
   </div>
 </template>

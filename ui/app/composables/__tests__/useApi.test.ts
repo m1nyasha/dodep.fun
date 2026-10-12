@@ -9,7 +9,7 @@ const json = (status: number, body: unknown) =>
 describe('useApi', () => {
   it('prefixes requests with /api', async () => {
     registerEndpoint('/api/ping-ok', () => ({ ok: true }));
-    const result = await useApi()('/ping-ok') as unknown;
+    const result = (await useApi()('/ping-ok')) as unknown;
     expect(result).toEqual({ ok: true });
   });
 

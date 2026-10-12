@@ -10,7 +10,9 @@ const route = useRoute();
 const nav = useTemplateRef<HTMLElement>('nav');
 const hovered = ref<string | null>(null);
 const pill = reactive({ x: 0, w: 0, visible: false, ready: false });
-const active = computed(() => NAV.find((n) => (n.to === '/' ? route.path === '/' : route.path.startsWith(n.to)))?.to ?? null);
+const active = computed(
+  () => NAV.find((n) => (n.to === '/' ? route.path === '/' : route.path.startsWith(n.to)))?.to ?? null,
+);
 
 function place() {
   const to = hovered.value ?? active.value;
@@ -44,7 +46,10 @@ onMounted(() => {
       <UiIcon :name="n.icon" />
       <span>{{ n.label }}</span>
     </NuxtLink>
-    <i class="pill" :style="{ width: `${pill.w}px`, transform: `translateX(${pill.x}px)`, opacity: pill.visible ? 1 : 0 }" />
+    <i
+      class="pill"
+      :style="{ width: `${pill.w}px`, transform: `translateX(${pill.x}px)`, opacity: pill.visible ? 1 : 0 }"
+    />
   </nav>
 </template>
 

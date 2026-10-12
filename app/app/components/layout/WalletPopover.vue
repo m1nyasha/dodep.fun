@@ -17,7 +17,13 @@ const claimBtn = useTemplateRef<HTMLElement>('claim');
         <b>Ежедневно до {{ fmt(me?.dailyTarget ?? 10_000) }}</b>
         <span>{{ daily.text.value }}</span>
       </div>
-      <button v-if="daily.available.value" ref="claim" type="button" class="claim" @click="daily.claim(claimBtn ?? undefined)">
+      <button
+        v-if="daily.available.value"
+        ref="claim"
+        type="button"
+        class="claim"
+        @click="daily.claim(claimBtn ?? undefined)"
+      >
         Забрать
       </button>
     </div>

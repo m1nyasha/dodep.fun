@@ -10,7 +10,10 @@ const toast = useToast();
 const sfx = useSfx();
 
 const mode = ref(props.mode);
-watch(() => props.mode, (m) => (mode.value = m));
+watch(
+  () => props.mode,
+  (m) => (mode.value = m),
+);
 const register = computed(() => mode.value === 'register');
 
 const form = reactive({ nickname: '', password: '', agree: false });
@@ -28,9 +31,18 @@ function clear() {
 }
 
 watch(mode, clear);
-watch(() => form.nickname, () => (errors.nickname = ''));
-watch(() => form.password, () => (errors.password = ''));
-watch(() => form.agree, () => (errors.agree = false));
+watch(
+  () => form.nickname,
+  () => (errors.nickname = ''),
+);
+watch(
+  () => form.password,
+  () => (errors.password = ''),
+);
+watch(
+  () => form.agree,
+  () => (errors.agree = false),
+);
 
 function validate(): boolean {
   clear();
@@ -119,7 +131,9 @@ async function submit() {
 
     <p v-if="errors.common" class="form-error" role="alert">{{ errors.common }}</p>
 
-    <UiButton type="submit" wide class="submit" :loading="loading">{{ register ? 'Создать аккаунт' : 'Войти' }}</UiButton>
+    <UiButton type="submit" wide class="submit" :loading="loading">{{
+      register ? 'Создать аккаунт' : 'Войти'
+    }}</UiButton>
   </form>
 </template>
 

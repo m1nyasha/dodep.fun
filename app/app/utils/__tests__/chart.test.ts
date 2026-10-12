@@ -18,7 +18,13 @@ const player = (nickname: string, balance: number, aiType: string | null = 'Ос
 
 describe('cumulativeNet', () => {
   it('starts at zero and accumulates by round number', () => {
-    expect(cumulativeNet([{ roundNo: 3, net: -100 }, { roundNo: 1, net: 50 }, { roundNo: 2, net: 20 }])).toEqual([0, 50, 70, -30]);
+    expect(
+      cumulativeNet([
+        { roundNo: 3, net: -100 },
+        { roundNo: 1, net: 50 },
+        { roundNo: 2, net: 20 },
+      ]),
+    ).toEqual([0, 50, 70, -30]);
   });
 
   it('is a single zero for no rounds', () => {
