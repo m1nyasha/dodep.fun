@@ -49,6 +49,8 @@ pnpm dev
 - Swagger: http://localhost:4200/api/docs
 - WebSocket: ws://localhost:4200/api/ws
 
+Проверено: прокси Nitro devProxy (`ws: true`) не проксирует `/api/ws` в дев-режиме — хендшейк падает с `404`. Обходной путь: `app/.env` с `NUXT_PUBLIC_WS_URL=ws://localhost:4200/api/ws` (подхватывается `useFeed` напрямую, без прокси), перезапустить `pnpm dev`.
+
 Миграции: изменить `api/src/db/schema.ts` → `pnpm --filter @dodep/api db:generate --name <имя>` → `db:migrate`.
 
 e2e-тесты пересоздают базу `dodep_test` при каждом запуске: `pnpm test:e2e` (MySQL должна быть поднята).

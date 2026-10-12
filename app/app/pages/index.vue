@@ -9,6 +9,7 @@ useHead({ title: 'dodep.fun — открой клетку, остановись 
     <GameConsole />
     <aside class="side">
       <GameRecentRounds />
+      <FeedList />
     </aside>
   </div>
 </template>
