@@ -1,0 +1,8 @@
+prototype/
+docs/superpowers/
+pnpm-lock.yaml
+**/dist/
+**/.output/
+**/.nuxt/
+**/coverage/
+**/drizzle/meta/
