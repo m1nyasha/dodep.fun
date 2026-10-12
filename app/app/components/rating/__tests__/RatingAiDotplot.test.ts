@@ -1,8 +1,8 @@
 // @vitest-environment nuxt
 import type { LeaderboardDto, PlayerDto, RulesDto } from '@dodep/shared';
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime';
-import { describe, expect, it } from 'vitest';
-import { fmt } from '#imports';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { clearNuxtData, fmt } from '#imports';
 import RatingAiDotplot from '../RatingAiDotplot.vue';
 
 const rules: RulesDto = {
@@ -31,6 +31,10 @@ const ai = (nickname: string, aiType: string, balance: number): PlayerDto => ({
 });
 
 describe('RatingAiDotplot', () => {
+  beforeEach(() => {
+    clearNuxtData(['rules', 'ai-players']);
+  });
+
   it('shows an empty state without AI accounts', async () => {
     registerEndpoint('/api/rules', () => rules);
     registerEndpoint('/api/leaderboard', (): LeaderboardDto => ({ items: [], total: 0 }));

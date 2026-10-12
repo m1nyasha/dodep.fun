@@ -4,12 +4,9 @@ import type { LeaderboardDto } from '@dodep/shared';
 const api = useApi();
 const { rules, load: loadRules } = useRules();
 await useAsyncData('rules', loadRules);
-const { data, refresh } = await useAsyncData(
-  'ai-players',
-  () => api<LeaderboardDto>('/leaderboard', { query: { filter: 'ai', limit: 100 } }),
-  { immediate: false },
+const { data } = await useAsyncData('ai-players', () =>
+  api<LeaderboardDto>('/leaderboard', { query: { filter: 'ai', limit: 100 } }),
 );
-await refresh();
 
 const players = computed(() => data.value?.items ?? []);
 const rows = computed(() => groupByType(players.value));
