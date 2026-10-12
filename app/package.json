@@ -15,6 +15,7 @@
   "dependencies": {
     "@dodep/shared": "workspace:*",
     "@dodep/ui": "workspace:*",
+    "@sentry/nuxt": "^11.7.0",
     "@vueuse/core": "^15.0.0",
     "nuxt": "^4.6.1",
     "vue": "^3.5.43"

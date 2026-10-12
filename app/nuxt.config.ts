@@ -3,17 +3,22 @@ const FAVICON =
 
 export default defineNuxtConfig({
   extends: ['../ui'],
+  modules: ['@sentry/nuxt/module'],
   compatibilityDate: '2026-10-01',
   devServer: { port: 4100 },
   css: ['~/assets/css/motion.css'],
   runtimeConfig: {
     apiInternalUrl: '',
-    public: { sentryDsn: '', wsUrl: '' },
+    public: { sentryDsn: '', sentryEnvironment: 'development', sentryRelease: '', wsUrl: '' },
   },
   nitro: {
     devProxy: {
       '/api': { target: 'http://localhost:4200/api', changeOrigin: true, ws: true },
     },
+  },
+  sentry: {
+    sourcemaps: { disable: true },
+    telemetry: false,
   },
   app: {
     head: {

@@ -1,6 +1,7 @@
 export default defineNuxtConfig({
   compatibilityDate: '2026-10-01',
   extends: ['../ui'],
+  modules: ['@sentry/nuxt/module'],
   ssr: false,
   devServer: { port: 4300 },
   app: {
@@ -10,7 +11,13 @@ export default defineNuxtConfig({
       meta: [{ name: 'robots', content: 'noindex, nofollow' }],
     },
   },
-  runtimeConfig: { public: { siteUrl: 'http://localhost:4100' } },
+  runtimeConfig: {
+    public: { siteUrl: 'http://localhost:4100', sentryDsn: '', sentryEnvironment: 'development', sentryRelease: '' },
+  },
   nitro: { devProxy: { '/api': { target: 'http://localhost:4200/api', changeOrigin: true } } },
   typescript: { strict: true },
+  sentry: {
+    sourcemaps: { disable: true },
+    telemetry: false,
+  },
 });
