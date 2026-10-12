@@ -140,6 +140,13 @@ describe('players', () => {
       medianBalance: 12_000,
     });
     const ai = await request(t.server).get('/api/stats?scope=ai').expect(200);
-    expect(ai.body).toMatchObject({ scope: 'ai', accounts: 1, rounds: 9, rtp: 0, profitableShare: 0, medianBalance: 0 });
+    expect(ai.body).toMatchObject({
+      scope: 'ai',
+      accounts: 1,
+      rounds: 9,
+      rtp: 0,
+      profitableShare: 0,
+      medianBalance: 0,
+    });
   });
 });
