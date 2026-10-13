@@ -40,4 +40,24 @@ describe('CoinsForm', () => {
     await wrapper.find('form').trigger('submit');
     expect(wrapper.emitted('submit')).toEqual([[500]]);
   });
+
+  it('clears the amount after a successful adjustment', async () => {
+    const wrapper = await mountSuspended(CoinsForm);
+    const input = wrapper.find<HTMLInputElement>('input[name="amount"]');
+    await input.setValue('500');
+    await wrapper.find('form').trigger('submit');
+    (wrapper.vm as unknown as { onResult: (success: boolean) => void }).onResult(true);
+    await wrapper.vm.$nextTick();
+    expect(input.element.value).toBe('');
+  });
+
+  it('keeps the amount after a failed adjustment', async () => {
+    const wrapper = await mountSuspended(CoinsForm);
+    const input = wrapper.find<HTMLInputElement>('input[name="amount"]');
+    await input.setValue('500');
+    await wrapper.find('form').trigger('submit');
+    (wrapper.vm as unknown as { onResult: (success: boolean) => void }).onResult(false);
+    await wrapper.vm.$nextTick();
+    expect(input.element.value).toBe('500');
+  });
 });

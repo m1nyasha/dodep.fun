@@ -13,6 +13,10 @@ describe('safeRedirect', () => {
     expect(safeRedirect('https://evil.com')).toBe('/');
   });
 
+  it('falls back for a javascript: URI', () => {
+    expect(safeRedirect('javascript:alert(1)')).toBe('/');
+  });
+
   it('falls back for missing or non-string input', () => {
     expect(safeRedirect(undefined)).toBe('/');
     expect(safeRedirect(['/journal'])).toBe('/');

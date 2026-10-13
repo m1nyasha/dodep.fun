@@ -9,6 +9,13 @@ const { data, error } = useAsyncData(
   () => api<AdminAccountDetailDto>(`/admin/accounts/${encodeURIComponent(nickname.value)}`),
 );
 const action = useReasonAction();
+const coinsForm = ref<{ onResult: (success: boolean) => void } | null>(null);
+
+async function confirmAction(reason: string) {
+  const isCoins = action.target.value?.path.endsWith('/coins');
+  await action.run(reason);
+  if (isCoins) coinsForm.value?.onResult(action.target.value === null);
+}
 
 function toggle() {
   const account = data.value?.account;
@@ -65,7 +72,7 @@ function adjustCoins(amount: number) {
         </dl>
       </UiPanel>
       <UiPanel title="Монеты">
-        <CoinsForm @submit="adjustCoins" />
+        <CoinsForm ref="coinsForm" @submit="adjustCoins" />
       </UiPanel>
       <UiPanel title="Связанные аккаунты">
         <ul v-if="data.related.length" class="related">
@@ -87,7 +94,7 @@ function adjustCoins(amount: number) {
       :confirm-label="action.target.value.confirmLabel"
       :description="action.target.value.description"
       :danger="action.target.value.danger"
-      @confirm="action.run"
+      @confirm="confirmAction"
     />
   </div>
 </template>

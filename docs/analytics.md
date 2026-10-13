@@ -4,12 +4,13 @@
 
 ## Источники
 
-| Таблица / view  | Что в ней                                                                                                                                                                           |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `v_rounds`      | завершённые раунды + `nickname`, `is_ai`, `ai_type`, `bet_share` (ставка / баланс до), `net`, `duration_ms`, `prev_status`, `prev_bet`, `prev_safe_count` (предыдущий раунд игрока) |
-| `round_actions` | каждый клик и cash-out: `seq`, `type`, `cell`, `result`, `safe_before`, `multiplier` и `potential_payout` **на момент решения** (до результата)                                     |
-| `ledger`        | каждое изменение баланса: `kind` (`signup`, `bet`, `payout`, `daily`), `amount`, `balance_before`, `balance_after`                                                                  |
-| `users`         | текущий `balance`, суммы `total_wagered`, `total_payout`, `rounds_count`                                                                                                            |
+| Таблица / view  | Что в ней                                                                                                                                                                                                         |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `v_rounds`      | завершённые раунды + `nickname`, `is_ai`, `ai_type`, `bet_share` (ставка / баланс до), `net`, `duration_ms`, `prev_status`, `prev_bet`, `prev_safe_count` (предыдущий раунд игрока)                               |
+| `round_actions` | каждый клик и cash-out: `seq`, `type`, `cell`, `result`, `safe_before`, `multiplier` и `potential_payout` **на момент решения** (до результата)                                                                   |
+| `ledger`        | каждое изменение баланса: `kind` (`signup`, `bet`, `payout`, `daily`, `admin`), `amount`, `balance_before`, `balance_after`. `admin` — ручная правка баланса из админки, не игровой доход: исключайте её из `net` |
+| `users`         | текущий `balance`, суммы `total_wagered`, `total_payout`, `rounds_count`                                                                                                                                          |
+| `admin_actions` | действия администратора: `action` (в т.ч. `coins_adjust` — ручное начисление/списание монет), `target_user_id`, `payload`, `reason`                                                                               |
 
 ## Фильтры
 

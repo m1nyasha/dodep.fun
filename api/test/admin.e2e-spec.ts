@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { ledger, ruleVersions, rounds, sessions, users } from '../src/db/schema.js';
+import { adminActions, ledger, ruleVersions, rounds, sessions, users } from '../src/db/schema.js';
 import { createTestApp, PASSWORD, register, setUser, type TestApp } from './helpers.js';
 
 async function ticketFor(t: TestApp, nickname: string) {
@@ -316,19 +316,43 @@ describe('admin coin adjustment', () => {
     expect(res.body.balance).toBe(9_000);
   });
 
-  it('rejects a debit that would push the balance below zero', async () => {
+  it('rejects a debit that would push the balance below zero, leaving balance/ledger/audit untouched', async () => {
     const { admin } = await loginAdmin(t);
     await register(t.server, 'poor');
+    const [before] = await t.db.select().from(users).where(eq(users.nickname, 'poor'));
+    if (!before) throw new Error('expected poor');
+    const ledgerBefore = await t.db.select().from(ledger).where(eq(ledger.userId, before.id));
+    const actionsBefore = await t.db.select().from(adminActions).where(eq(adminActions.targetUserId, before.id));
+
     const res = await admin.post('/api/admin/accounts/poor/coins').send({ amount: -20_000, reason: 'x' }).expect(400);
     expect(res.body.code).toBe('INSUFFICIENT_BALANCE');
+
+    const [after] = await t.db.select().from(users).where(eq(users.nickname, 'poor'));
+    expect(after?.balance).toBe(before.balance);
+    expect(await t.db.select().from(ledger).where(eq(ledger.userId, before.id))).toHaveLength(ledgerBefore.length);
+    expect(await t.db.select().from(adminActions).where(eq(adminActions.targetUserId, before.id))).toHaveLength(
+      actionsBefore.length,
+    );
   });
 
-  it('rejects an adjustment while a round is active', async () => {
+  it('rejects an adjustment while a round is active, leaving balance/ledger/audit untouched', async () => {
     const { admin } = await loginAdmin(t);
     const player = await register(t.server, 'busy');
     await player.post('/api/rounds').send({ bet: 100 }).expect(201);
+    const [before] = await t.db.select().from(users).where(eq(users.nickname, 'busy'));
+    if (!before) throw new Error('expected busy');
+    const ledgerBefore = await t.db.select().from(ledger).where(eq(ledger.userId, before.id));
+    const actionsBefore = await t.db.select().from(adminActions).where(eq(adminActions.targetUserId, before.id));
+
     const res = await admin.post('/api/admin/accounts/busy/coins').send({ amount: 100, reason: 'x' }).expect(409);
     expect(res.body.code).toBe('ROUND_ACTIVE');
+
+    const [after] = await t.db.select().from(users).where(eq(users.nickname, 'busy'));
+    expect(after?.balance).toBe(before.balance);
+    expect(await t.db.select().from(ledger).where(eq(ledger.userId, before.id))).toHaveLength(ledgerBefore.length);
+    expect(await t.db.select().from(adminActions).where(eq(adminActions.targetUserId, before.id))).toHaveLength(
+      actionsBefore.length,
+    );
   });
 
   it('validates the amount and the reason', async () => {
@@ -357,6 +381,11 @@ describe('admin coin adjustment', () => {
   it('requires an admin session', async () => {
     await register(t.server, 'anon');
     await request(t.server).post('/api/admin/accounts/anon/coins').send({ amount: 100, reason: 'x' }).expect(401);
+  });
+
+  it('rejects a signed-in non-admin player (public sid cookie only)', async () => {
+    const player = await register(t.server, 'commoner');
+    await player.post('/api/admin/accounts/commoner/coins').send({ amount: 100, reason: 'x' }).expect(401);
   });
 });
 

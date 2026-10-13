@@ -22,6 +22,14 @@ function submit() {
   error.value = '';
   emit('submit', amount);
 }
+
+function onResult(success: boolean) {
+  if (!success) return;
+  value.value = '';
+  error.value = '';
+}
+
+defineExpose({ onResult });
 </script>
 
 <template>
