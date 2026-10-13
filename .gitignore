@@ -24,6 +24,7 @@ coverage/
 
 # logs
 *.log
+agents/runs/*.jsonl
 npm-debug.log*
 pnpm-debug.log*
 

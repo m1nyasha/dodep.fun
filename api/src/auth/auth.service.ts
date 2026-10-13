@@ -58,8 +58,8 @@ export class AuthService {
 
   async login(input: LoginInput, fp: Fingerprint): Promise<string> {
     const [user] = await this.db.select().from(users).where(eq(users.nickname, input.nickname));
-    const ok = await verify(user?.passwordHash ?? DUMMY_HASH, input.password);
-    if (!user || !ok) throw apiError(401, 'INVALID_CREDENTIALS', 'Неверный ник или пароль');
+    const ok = await verify(user && !user.isAi ? user.passwordHash : DUMMY_HASH, input.password);
+    if (!user || !ok || user.isAi) throw apiError(401, 'INVALID_CREDENTIALS', 'Неверный ник или пароль');
     if (user.blockedAt) throw apiError(403, 'ACCOUNT_BLOCKED', 'Аккаунт заблокирован');
     await this.db.insert(authFingerprints).values({ ...fp, userId: user.id, event: 'login' });
     return this.sessions.create(user.id, 'user', SESSION_TTL);

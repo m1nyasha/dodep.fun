@@ -21,6 +21,12 @@ import { RulesService } from './rules.service.js';
 import { toRoundDto } from './rounds.mapper.js';
 
 type Outcome = { response: RoundResponseDto; feed?: FeedEventDto };
+export type AgentActionContext = {
+  experimentId: string;
+  ruleVersionId: string;
+  before: (tx: Tx, user: UserRow, round?: RoundRow) => Promise<void>;
+  after: (tx: Tx, response: RoundResponseDto) => Promise<void>;
+};
 
 @Injectable()
 export class RoundsService {
@@ -31,11 +37,12 @@ export class RoundsService {
     private readonly feed: FeedGateway,
   ) {}
 
-  async start(userId: string, bet: number): Promise<RoundResponseDto> {
+  async start(userId: string, bet: number, agent?: AgentActionContext): Promise<RoundResponseDto> {
     try {
       return await this.db.transaction(async (tx) => {
         const user = await this.lockUser(tx, userId);
-        const rule = await this.rules.active(tx);
+        await agent?.before(tx, user);
+        const rule = agent ? await this.rules.byId(agent.ruleVersionId, tx) : await this.rules.active(tx);
         if (bet < rule.minBet || bet % rule.betStep !== 0)
           throw apiError(400, 'BET_INVALID', `Ставка — от ${rule.minBet} с шагом ${rule.betStep}`);
         if (bet > user.balance) throw apiError(400, 'INSUFFICIENT_BALANCE', 'Недостаточно монет');
@@ -53,6 +60,8 @@ export class RoundsService {
           id,
           userId,
           ruleVersionId: rule.id,
+          experimentId: agent?.experimentId,
+          client: agent ? 'agent' : 'web',
           roundNo: user.roundsCount + 1,
           bet,
           balanceBefore: user.balance,
@@ -77,23 +86,28 @@ export class RoundsService {
           roundId: id,
         });
         const round = await this.lockRound(tx, userId, id);
-        return { round: toRoundDto(round, [], rule), balance };
+        const response = { round: toRoundDto(round, [], rule), balance };
+        await agent?.after(tx, response);
+        return response;
       });
     } catch (e) {
-      if (isDuplicateKey(e)) throw apiError(409, 'ROUND_ACTIVE', 'Раунд уже идёт');
+      if (isDuplicateKey(e) && !agent) throw apiError(409, 'ROUND_ACTIVE', 'Раунд уже идёт');
       throw e;
     }
   }
 
-  async open(user: UserRow, roundId: string, cell: number): Promise<RoundResponseDto> {
+  async open(user: UserRow, roundId: string, cell: number, agent?: AgentActionContext): Promise<RoundResponseDto> {
     const outcome = await this.db.transaction(async (tx): Promise<Outcome> => {
       const locked = await this.lockUser(tx, user.id);
       const round = await this.lockRound(tx, user.id, roundId);
+      await agent?.before(tx, locked, round);
       const rule = await this.rules.byId(round.ruleVersionId, tx);
       const actions = await this.actions(tx, round.id);
       const opened = actions.filter((a) => a.type === 'open').map((a) => a.cell);
-      if (round.status !== 'active' || opened.includes(cell))
+      if (round.status !== 'active' || opened.includes(cell)) {
+        if (agent) throw apiError(409, 'ROUND_ACTIVE', 'Действие уже недоступно');
         return { response: { round: toRoundDto(round, actions, rule), balance: locked.balance } };
+      }
 
       const seq = actions.length + 1;
       const stake = {
@@ -116,32 +130,45 @@ export class RoundsService {
             finishedAt: new Date(),
           })
           .where(eq(rounds.id, roundId));
-        return this.finished(tx, locked, roundId, rule, locked.balance);
+        const outcome = await this.finished(tx, locked, roundId, rule, locked.balance);
+        await agent?.after(tx, outcome.response);
+        return outcome;
       }
 
       await tx.insert(roundActions).values({ roundId, seq, type: 'open', cell, result: 'safe', ...stake });
       const safeCount = round.safeCount + 1;
       await tx.update(rounds).set({ safeCount }).where(eq(rounds.id, roundId));
-      if (safeCount === SAFE) return this.cashOutLocked(tx, locked, { ...round, safeCount }, rule, seq + 1, 'all_safe');
+      if (safeCount === SAFE) {
+        const outcome = await this.cashOutLocked(tx, locked, { ...round, safeCount }, rule, seq + 1, 'all_safe');
+        await agent?.after(tx, outcome.response);
+        return outcome;
+      }
 
       const updated = await this.lockRound(tx, user.id, roundId);
-      return {
+      const outcome: Outcome = {
         response: { round: toRoundDto(updated, await this.actions(tx, roundId), rule), balance: locked.balance },
       };
+      await agent?.after(tx, outcome.response);
+      return outcome;
     });
     return this.emit(outcome);
   }
 
-  async cashOut(user: UserRow, roundId: string): Promise<RoundResponseDto> {
+  async cashOut(user: UserRow, roundId: string, agent?: AgentActionContext): Promise<RoundResponseDto> {
     const outcome = await this.db.transaction(async (tx): Promise<Outcome> => {
       const locked = await this.lockUser(tx, user.id);
       const round = await this.lockRound(tx, user.id, roundId);
+      await agent?.before(tx, locked, round);
       const rule = await this.rules.byId(round.ruleVersionId, tx);
       const actions = await this.actions(tx, round.id);
-      if (round.status !== 'active')
+      if (round.status !== 'active') {
+        if (agent) throw apiError(409, 'ROUND_ACTIVE', 'Раунд уже завершён');
         return { response: { round: toRoundDto(round, actions, rule), balance: locked.balance } };
+      }
       if (round.safeCount === 0) throw apiError(400, 'CASH_OUT_UNAVAILABLE', 'Сначала открой клетку');
-      return this.cashOutLocked(tx, locked, round, rule, actions.length + 1, 'cash_out');
+      const outcome = await this.cashOutLocked(tx, locked, round, rule, actions.length + 1, 'cash_out');
+      await agent?.after(tx, outcome.response);
+      return outcome;
     });
     return this.emit(outcome);
   }

@@ -1,10 +1,10 @@
 import { isDailyAvailable, nextDailyAt, normalizeStatus, type DailyClaimDto, type MeDto } from '@dodep/shared';
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { apiError } from '../common/api-error.js';
 import { config } from '../config.js';
 import { DB, type Db } from '../db/db.module.js';
-import { ledger, rounds, statusHistory, users, type UserRow } from '../db/schema.js';
+import { experimentAgents, experiments, ledger, rounds, statusHistory, users, type UserRow } from '../db/schema.js';
 import { RulesService } from '../game/rules.service.js';
 import { TOP_HUMANS } from './ranking.js';
 import { PlayersService } from './players.service.js';
@@ -40,6 +40,14 @@ export class MeService {
     return this.db.transaction(async (tx) => {
       const [user] = await tx.select().from(users).where(eq(users.id, userId)).for('update');
       if (!user) throw apiError(401, 'UNAUTHORIZED', 'Нужно войти');
+      if (user.isAi) {
+        const [running] = await tx
+          .select({ id: experimentAgents.id })
+          .from(experimentAgents)
+          .innerJoin(experiments, eq(experiments.id, experimentAgents.experimentId))
+          .where(and(eq(experimentAgents.userId, userId), isNull(experiments.finishedAt)));
+        if (running) throw apiError(400, 'DAILY_UNAVAILABLE', 'Во время эксперимента выдача недоступна');
+      }
       const rule = await this.rules.active(tx);
       const now = new Date();
       const [activeRound] = await tx

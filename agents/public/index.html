@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>dodep.fun · AI experiment monitor</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+        background: #090e11;
+        color: #eff6f2;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(circle at 15% 0%, #193c36 0%, transparent 40%), #090e11;
+      }
+      .shell {
+        width: min(1600px, calc(100% - 48px));
+        margin: auto;
+        padding: 34px 0 50px;
+      }
+      header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 24px;
+        margin-bottom: 28px;
+      }
+      .eyebrow {
+        color: #69dcb0;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        font-size: 12px;
+        font-weight: 800;
+      }
+      h1 {
+        font-size: clamp(28px, 4vw, 54px);
+        letter-spacing: -0.05em;
+        margin: 8px 0 6px;
+        line-height: 1.04;
+      }
+      .sub {
+        color: #9ab0a7;
+        font-size: 14px;
+      }
+      .live {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        background: #163b30;
+        border: 1px solid #3c846a;
+        border-radius: 100px;
+        padding: 10px 16px;
+        color: #a9f7cc;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        white-space: nowrap;
+      }
+      .live::before {
+        content: '';
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #7cf8ad;
+        box-shadow: 0 0 18px #7cf8ad;
+        animation: pulse 1.7s infinite;
+      }
+      .live.done {
+        color: #d1dbd5;
+        background: #25322d;
+        border-color: #49594f;
+      }
+      .live.done::before {
+        background: #b8c5bc;
+        box-shadow: none;
+        animation: none;
+      }
+      @keyframes pulse {
+        50% {
+          opacity: 0.3;
+        }
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .stat,
+      .panel {
+        border: 1px solid #29413b;
+        background: rgba(17, 29, 27, 0.94);
+        border-radius: 18px;
+      }
+      .stat {
+        padding: 18px 22px;
+        min-height: 112px;
+      }
+      .stat span {
+        display: block;
+        color: #8ca79b;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.13em;
+        font-weight: 750;
+      }
+      .stat strong {
+        display: block;
+        font-variant-numeric: tabular-nums;
+        font-size: 29px;
+        letter-spacing: -0.04em;
+        margin-top: 7px;
+      }
+      .main {
+        display: grid;
+        grid-template-columns: minmax(310px, 1fr) minmax(400px, 1.4fr) minmax(360px, 1.15fr);
+        gap: 14px;
+        align-items: start;
+      }
+      .panel {
+        overflow: hidden;
+      }
+      .panel-head {
+        padding: 17px 20px;
+        border-bottom: 1px solid #29413b;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .panel-head h2 {
+        margin: 0;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.13em;
+      }
+      .panel-head small {
+        color: #7c998b;
+      }
+      .agent-list {
+        padding: 10px;
+        display: grid;
+        gap: 7px;
+        max-height: 650px;
+        overflow: auto;
+      }
+      .agent {
+        border: 1px solid transparent;
+        background: #192a26;
+        border-radius: 12px;
+        padding: 14px;
+        width: 100%;
+        color: inherit;
+        text-align: left;
+        cursor: pointer;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 4px;
+      }
+      .agent:hover,
+      .agent.active {
+        border-color: #68dba9;
+        background: #1c3b30;
+      }
+      .agent .name {
+        font-size: 15px;
+        font-weight: 800;
+      }
+      .agent .type {
+        color: #9bb7a8;
+        font-size: 12px;
+      }
+      .agent .balance {
+        font-variant-numeric: tabular-nums;
+        font-size: 17px;
+        font-weight: 800;
+        grid-row: span 2;
+        align-self: center;
+      }
+      .agent .progress {
+        grid-column: 1 / -1;
+        height: 4px;
+        border-radius: 4px;
+        background: #30453b;
+        margin-top: 9px;
+        overflow: hidden;
+      }
+      .agent .progress i {
+        display: block;
+        height: 100%;
+        background: #6add9e;
+      }
+      .focus {
+        padding: 24px;
+        min-height: 500px;
+      }
+      .focus-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        gap: 10px;
+      }
+      .profile {
+        color: #73d7a6;
+        font-size: 12px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.13em;
+      }
+      .focus h3 {
+        font-size: 29px;
+        letter-spacing: -0.04em;
+        margin: 5px 0 0;
+      }
+      .badge {
+        padding: 7px 10px;
+        border: 1px solid #4c7863;
+        border-radius: 99px;
+        color: #9beaaf;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        white-space: nowrap;
+      }
+      .balance-main {
+        font-variant-numeric: tabular-nums;
+        font-size: clamp(39px, 5vw, 66px);
+        font-weight: 850;
+        letter-spacing: -0.06em;
+        margin: 25px 0 1px;
+        line-height: 1;
+      }
+      .balance-main.negative {
+        color: #ff9b85;
+      }
+      .balance-label {
+        color: #8ca79b;
+        font-size: 13px;
+      }
+      .focus-metrics {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin: 22px 0;
+      }
+      .metric {
+        background: #1d302b;
+        border-radius: 10px;
+        padding: 11px;
+      }
+      .metric span {
+        display: block;
+        color: #8ca79b;
+        font-size: 11px;
+        margin-bottom: 5px;
+      }
+      .metric strong {
+        font-size: 15px;
+        font-variant-numeric: tabular-nums;
+      }
+      .board-label {
+        display: flex;
+        justify-content: space-between;
+        color: #8ca79b;
+        font-size: 12px;
+        margin: 14px 0 9px;
+      }
+      .board {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 7px;
+        max-width: 380px;
+      }
+      .cell {
+        aspect-ratio: 1;
+        display: grid;
+        place-items: center;
+        border-radius: 10px;
+        border: 1px solid #345448;
+        background: #20372f;
+        font-size: 20px;
+        color: #447260;
+      }
+      .cell.open {
+        background: #76e2a9;
+        border-color: #76e2a9;
+        color: #073b28;
+        box-shadow: 0 0 20px #4acd8650;
+      }
+      .cell.mine {
+        background: #ed866e;
+        color: #401a17;
+        border-color: #ed866e;
+      }
+      .no-round {
+        display: grid;
+        place-items: center;
+        border: 1px dashed #405c4e;
+        border-radius: 13px;
+        min-height: 160px;
+        color: #8ca79b;
+        text-align: center;
+      }
+      .feed {
+        max-height: 650px;
+        overflow: auto;
+        padding: 0 18px;
+      }
+      .event {
+        display: grid;
+        grid-template-columns: 48px 1fr;
+        gap: 12px;
+        padding: 16px 0;
+        border-bottom: 1px solid #29413b;
+      }
+      .event time {
+        color: #789286;
+        font:
+          11px ui-monospace,
+          monospace;
+        padding-top: 3px;
+      }
+      .event strong {
+        display: block;
+        font-size: 14px;
+      }
+      .event p {
+        color: #bdcec4;
+        font-size: 13px;
+        margin: 6px 0 0;
+        line-height: 1.42;
+      }
+      .event small {
+        display: block;
+        margin-top: 7px;
+        color: #789286;
+        font:
+          11px ui-monospace,
+          monospace;
+      }
+      .empty {
+        padding: 28px;
+        color: #9aafa3;
+      }
+      .footer {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 16px;
+        color: #648071;
+        font:
+          11px ui-monospace,
+          monospace;
+        gap: 10px;
+      }
+      @media (max-height: 950px) and (min-width: 1151px) {
+        .shell {
+          padding-top: 22px;
+        }
+        header {
+          margin-bottom: 18px;
+        }
+        .stat {
+          min-height: 88px;
+          padding: 12px 18px;
+        }
+        .stats {
+          margin-bottom: 14px;
+        }
+        .focus {
+          padding: 18px 24px;
+        }
+        .balance-main {
+          margin-top: 18px;
+        }
+        .focus-metrics {
+          margin: 15px 0;
+        }
+        .board {
+          max-width: 290px;
+        }
+      }
+      @media (max-width: 1150px) {
+        .main {
+          grid-template-columns: 1fr 1fr;
+        }
+        .main .panel:last-child {
+          grid-column: 1/-1;
+        }
+        .feed {
+          max-height: 300px;
+        }
+      }
+      @media (max-width: 700px) {
+        .shell {
+          width: calc(100% - 26px);
+          padding-top: 20px;
+        }
+        header {
+          align-items: center;
+        }
+        .stats {
+          grid-template-columns: 1fr 1fr;
+        }
+        .stat {
+          padding: 12px;
+          min-height: 86px;
+        }
+        .stat strong {
+          font-size: 22px;
+        }
+        .main {
+          grid-template-columns: 1fr;
+        }
+        .main .panel:last-child {
+          grid-column: auto;
+        }
+        .focus {
+          min-height: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header>
+        <div>
+          <div class="eyebrow">dodep.fun / experiment monitor</div>
+          <h1 id="title">AI-эксперимент</h1>
+          <div class="sub" id="subtitle">Загружаем сохранённый журнал…</div>
+        </div>
+        <div class="live" id="live">В ЭФИРЕ</div>
+      </header>
+      <section class="stats" aria-label="Сводка">
+        <div class="stat"><span>Участников</span><strong id="agents-count">—</strong></div>
+        <div class="stat"><span>Завершено раундов</span><strong id="rounds-count">—</strong></div>
+        <div class="stat"><span>Суммарный баланс</span><strong id="total-balance">—</strong></div>
+        <div class="stat"><span>Фактический RTP</span><strong id="rtp">—</strong></div>
+      </section>
+      <div class="main">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Участники</h2>
+            <small>по одному на типаж</small>
+          </div>
+          <div class="agent-list" id="agent-list"></div>
+        </section>
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Сейчас у агента</h2>
+            <small id="last-update">—</small>
+          </div>
+          <div class="focus" id="focus"><div class="empty">Ожидаем участника</div></div>
+        </section>
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Решения модели</h2>
+            <small>последние 100</small>
+          </div>
+          <div class="feed" id="feed"><div class="empty">Решений пока нет</div></div>
+        </section>
+      </div>
+      <div class="footer">
+        <span id="run-id">—</span><span>Локальный экран · данные обновляются каждую секунду</span>
+      </div>
+    </div>
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const fmt = (n) => new Intl.NumberFormat('ru-RU').format(n ?? 0);
+      const terminalLabels = {
+        stopped: 'ОСТАНОВИЛСЯ',
+        technical_stop: 'ТЕХ. ПАУЗА',
+        round_limit: 'ЛИМИТ РАУНДОВ',
+        insufficient_balance: 'МАЛО МОНЕТ',
+        experiment_finished: 'ЗАВЕРШЁН',
+      };
+      let selected = null;
+      let snapshot = null;
+      function el(tag, className, text) {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined) node.textContent = text;
+        return node;
+      }
+      function renderAgents(data) {
+        const list = $('agent-list');
+        list.replaceChildren();
+        for (const agent of data.agents) {
+          const button = el('button', `agent ${selected === agent.agentId ? 'active' : ''}`);
+          button.type = 'button';
+          button.append(
+            el('span', 'name', agent.nickname),
+            el('span', 'balance', fmt(agent.balance)),
+            el('span', 'type', agent.profileTitle ?? agent.profileKey),
+          );
+          const progress = el('span', 'progress');
+          const bar = el('i');
+          bar.style.width = `${Math.min(100, (agent.completedRounds / agent.maxRounds) * 100)}%`;
+          progress.append(bar);
+          button.append(progress);
+          button.onclick = () => {
+            selected = agent.agentId;
+            render(snapshot);
+          };
+          list.append(button);
+        }
+      }
+      function renderFocus(agent, decisions) {
+        const focus = $('focus');
+        focus.replaceChildren();
+        if (!agent) {
+          focus.append(el('div', 'empty', 'Ожидаем участника'));
+          return;
+        }
+        const top = el('div', 'focus-top');
+        const name = el('div');
+        name.append(el('div', 'profile', agent.profileTitle ?? agent.profileKey), el('h3', '', agent.nickname));
+        top.append(
+          name,
+          el(
+            'div',
+            'badge',
+            terminalLabels[agent.terminalReason] ?? (agent.activeRound ? 'Играет' : 'Выбирает ставку'),
+          ),
+        );
+        focus.append(top);
+        const main = el('div', `balance-main ${agent.balance < 10000 ? 'negative' : ''}`, fmt(agent.balance));
+        focus.append(main, el('div', 'balance-label', 'виртуальных монет'));
+        const metrics = el('div', 'focus-metrics');
+        for (const [label, value] of [
+          ['Раундов', `${agent.completedRounds} / ${agent.maxRounds}`],
+          ['Поставлено', fmt(agent.wagered)],
+          ['Выплачено', fmt(agent.payout)],
+        ]) {
+          const m = el('div', 'metric');
+          m.append(el('span', '', label), el('strong', '', value));
+          metrics.append(m);
+        }
+        focus.append(metrics);
+        if (agent.activeRound) {
+          const round = agent.activeRound;
+          const label = el('div', 'board-label');
+          label.append(
+            el('span', '', `Ставка ${fmt(round.bet)}`),
+            el('span', '', `Забрать ${fmt(round.potentialPayout)}`),
+          );
+          focus.append(label);
+          const board = el('div', 'board');
+          for (let cell = 0; cell < 25; cell++)
+            board.append(
+              el('div', `cell ${round.opened.includes(cell) ? 'open' : ''}`, round.opened.includes(cell) ? '◆' : '·'),
+            );
+          focus.append(board);
+        } else {
+          const last = decisions.find((d) => d.agentId === agent.agentId);
+          const round = last?.result?.round;
+          if (round && round.status !== 'active') {
+            const label = el('div', 'board-label');
+            label.append(
+              el('span', '', round.status === 'hit_mine' ? 'Последний раунд · мина' : 'Последний раунд · выплата'),
+              el('span', '', `Итог ${round.net >= 0 ? '+' : ''}${fmt(round.net)}`),
+            );
+            focus.append(label);
+            const board = el('div', 'board');
+            for (let cell = 0; cell < 25; cell++) {
+              const hit = round.hitCell === cell;
+              board.append(
+                el(
+                  'div',
+                  `cell ${hit ? 'mine' : round.opened.includes(cell) ? 'open' : ''}`,
+                  hit ? '✕' : round.opened.includes(cell) ? '◆' : '·',
+                ),
+              );
+            }
+            focus.append(board);
+          } else focus.append(el('div', 'no-round', last ? `Последнее решение: ${last.reason}` : 'Раунд ещё не начат'));
+        }
+      }
+      function renderFeed(decisions) {
+        const feed = $('feed');
+        feed.replaceChildren();
+        if (!decisions.length) {
+          feed.append(el('div', 'empty', 'Решений пока нет'));
+          return;
+        }
+        for (const d of decisions) {
+          const event = el('div', 'event');
+          const date = new Date(d.createdAt);
+          event.append(
+            el('time', '', date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' })),
+          );
+          const details = el('div');
+          const action =
+            d.action === 'bet'
+              ? `ставка ${fmt(d.amount)}`
+              : d.action === 'open'
+                ? `клетка ${d.cell + 1}`
+                : d.action === 'cash_out'
+                  ? 'забрал выплату'
+                  : 'остановился';
+          const who = snapshot.agents.find((a) => a.agentId === d.agentId)?.nickname ?? d.agentId.slice(0, 8);
+          const result = d.result?.round;
+          const outcome =
+            result?.status === 'hit_mine'
+              ? ' · мина'
+              : result?.status === 'cashed_out'
+                ? ` · ${result.net >= 0 ? '+' : ''}${fmt(result.net)}`
+                : '';
+          details.append(
+            el('strong', '', `${who} · ${action}${outcome}`),
+            el('p', '', d.reason),
+            el('small', '', `${d.modelId} · ${fmt(d.inputTokens + d.outputTokens)} токенов`),
+          );
+          event.append(details);
+          feed.append(event);
+        }
+      }
+      function render(data) {
+        snapshot = data;
+        if (!selected || !data.agents.some((a) => a.agentId === selected)) selected = data.agents[0]?.agentId ?? null;
+        $('title').textContent = data.experiment.name;
+        $('subtitle').textContent =
+          `Правила v${data.agents[0]?.rule.version ?? '—'} · лимит ${data.experiment.maxRounds} раундов на агента`;
+        $('run-id').textContent = `experimentId: ${data.experiment.id}`;
+        $('agents-count').textContent = fmt(data.agents.length);
+        $('rounds-count').textContent = fmt(data.agents.reduce((n, a) => n + a.completedRounds, 0));
+        $('total-balance').textContent = fmt(data.agents.reduce((n, a) => n + a.balance, 0));
+        const wagered = data.agents.reduce((n, a) => n + a.wagered, 0),
+          payout = data.agents.reduce((n, a) => n + a.payout, 0);
+        $('rtp').textContent = wagered ? `${((payout / wagered) * 100).toFixed(1)}%` : '—';
+        const live = $('live');
+        live.classList.toggle('done', Boolean(data.experiment.finishedAt));
+        live.textContent = data.experiment.finishedAt ? 'ЗАВЕРШЁН' : 'В ЭФИРЕ';
+        $('last-update').textContent = new Date().toLocaleTimeString('ru-RU');
+        renderAgents(data);
+        renderFocus(
+          data.agents.find((a) => a.agentId === selected),
+          data.decisions,
+        );
+        renderFeed(data.decisions);
+      }
+      async function poll() {
+        try {
+          const response = await fetch('/api/snapshot', { cache: 'no-store' });
+          if (!response.ok) throw new Error(String(response.status));
+          render(await response.json());
+        } catch (error) {
+          $('last-update').textContent = `Связь: ${error.message}`;
+        }
+      }
+      poll();
+      setInterval(poll, 1000);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "name": "Пилот характеров",
+  "ruleVersion": 1,
+  "maxRounds": 50,
+  "modelId": "deepseek-flash",
+  "maxConcurrentModelCalls": 5,
+  "maxModelCallsPerAgent": 250,
+  "maxTotalTokens": 200000,
+  "maxDurationMinutes": 120,
+  "dashboardPort": 4400
+}
