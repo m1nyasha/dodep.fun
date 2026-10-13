@@ -96,10 +96,10 @@ TAG=v1.0.1 pnpm docker:push app    # только один
 ## 5. Проект и приложения
 
 1. **Projects → Create Project** → `dodep`. Внутри — окружение по умолчанию (`production`).
-2. Создать три сервиса **Create Service → Application**: `dodep-api`, `dodep-app`, `dodep-admin`.
+2. Создать три сервиса **Create Service → Application**: `dodep-api`, `dodep-app`, `dodep-admin`. В диалоге в поле **App Name** вписать то же короткое имя (`dodep-api` и т. д.) — Dokploy всё равно добавит к нему случайный суффикс из 6 символов, но имя останется читаемым.
 3. У каждого во вкладке **General** выбрать источник **Docker** (https://docs.dokploy.com/docs/core/Docker) и указать образ из таблицы ниже. Доступ к реестру — выбрать реестр из раздела 4 (**Advanced → Cluster Settings → Registry**) либо заполнить Registry URL / Username / Password прямо в полях Docker-источника.
 4. **Не публиковать порты** (Advanced → Ports): Traefik ходит в контейнеры по внутренней сети, публикация мешает маршрутизации по доменам.
-5. Запомнить **App Name** у `dodep-api` — внутреннее имя сервиса во вкладке General, вида `dodep-dodepapi-x1y2z3`. По нему `dodep-app` обращается к API внутри сети (https://docs.dokploy.com/docs/core/troubleshooting/networking).
+5. Запомнить **App Name** у `dodep-api` — внутреннее имя сервиса во вкладке General, вида `dodep-api-k3x9qa`. По нему `dodep-app` обращается к API внутри сети (https://docs.dokploy.com/docs/core/troubleshooting/networking). Имя постоянное: деплои и обновления его не меняют. Сменится оно только если удалить приложение и создать заново — тогда обновить `NUXT_API_INTERNAL_URL` у `dodep-app` (раздел 6).
 
 | Приложение    | Docker Image                                        |
 | ------------- | --------------------------------------------------- |
