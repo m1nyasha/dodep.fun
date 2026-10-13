@@ -10,6 +10,21 @@ export interface Budget {
   deadline: number;
 }
 
+export function technicalLimitReason(
+  budget: Budget,
+  config: RunConfig,
+  agentId: string,
+  now = Date.now(),
+): string | null {
+  const calls = budget.callsByAgent.get(agentId) ?? 0;
+  if (calls >= config.maxModelCallsPerAgent)
+    return `Достигнут лимит вызовов модели: ${calls} / ${config.maxModelCallsPerAgent}`;
+  if (budget.totalTokens >= config.maxTotalTokens)
+    return `Достигнут лимит токенов: ${budget.totalTokens} / ${config.maxTotalTokens}`;
+  if (now >= budget.deadline) return `Достигнут лимит времени: ${config.maxDurationMinutes} мин`;
+  return null;
+}
+
 function safeReason(error: unknown): string {
   const message = error instanceof Error ? error.message : 'Неизвестная ошибка';
   return [process.env.DEEPSEEK_API_KEY, process.env.INTERNAL_AGENT_API_TOKEN]
@@ -47,22 +62,13 @@ export async function runAgent(args: {
     while (true) {
       const state = await game.state(experimentId, agentId);
       if (state.terminalReason) return;
-      const used = budget.callsByAgent.get(agentId) ?? 0;
-      if (
-        used >= config.maxModelCallsPerAgent ||
-        budget.totalTokens >= config.maxTotalTokens ||
-        Date.now() >= budget.deadline
-      )
-        throw new Error('Достигнут технический лимит вызовов, токенов или времени');
+      const limit = technicalLimitReason(budget, config, agentId);
+      if (limit) throw new Error(limit);
 
       let response: Awaited<ReturnType<ModelClient['decide']>> | undefined;
       for (let attempt = 0; attempt < 3; attempt++) {
-        if (
-          (budget.callsByAgent.get(agentId) ?? 0) >= config.maxModelCallsPerAgent ||
-          budget.totalTokens >= config.maxTotalTokens ||
-          Date.now() >= budget.deadline
-        )
-          throw new Error('Достигнут технический лимит вызовов, токенов или времени');
+        const limit = technicalLimitReason(budget, config, agentId);
+        if (limit) throw new Error(limit);
         budget.callsByAgent.set(agentId, (budget.callsByAgent.get(agentId) ?? 0) + 1);
         try {
           response = await model.decide(instructions, state);

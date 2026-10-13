@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AgentState } from '../decision.schema.js';
-import { validDecision } from '../run-agent.js';
+import { technicalLimitReason, validDecision } from '../run-agent.js';
+import type { RunConfig } from '../decision.schema.js';
 
 const state: AgentState = {
   agentId: 'a',
@@ -36,5 +37,30 @@ describe('validDecision', () => {
     expect(validDecision({ action: 'open', cell: 7, reason: 'Тут безопасно' }, active)).toBe(false);
     expect(validDecision({ action: 'open', cell: 8, reason: 'Дальше' }, active)).toBe(true);
     expect(validDecision({ action: 'stop', reason: 'Хватит' }, active)).toBe(false);
+  });
+});
+
+describe('technicalLimitReason', () => {
+  const config: RunConfig = {
+    name: 'Пилот',
+    ruleVersion: 1,
+    maxRounds: 200,
+    modelId: 'deepseek-flash',
+    maxConcurrentModelCalls: 20,
+    maxModelCallsPerAgent: 1000,
+    maxTotalTokens: 200_000,
+    maxDurationMinutes: 120,
+    dashboardPort: 4400,
+  };
+
+  it('identifies the token limit with measured usage', () => {
+    expect(
+      technicalLimitReason(
+        { totalTokens: 200_906, callsByAgent: new Map([['agent', 174]]), deadline: 10_000 },
+        config,
+        'agent',
+        1_000,
+      ),
+    ).toBe('Достигнут лимит токенов: 200906 / 200000');
   });
 });

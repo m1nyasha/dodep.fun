@@ -124,5 +124,9 @@ const outcomes = await Promise.allSettled(
 for (const [index, outcome] of outcomes.entries()) {
   if (outcome.status === 'rejected') console.error(`${participants[index]?.profile.key}:`, outcome.reason);
 }
-await game.finish(experimentId);
-console.log('Запуск завершён. Dashboard остаётся доступен до Ctrl+C.');
+if (outcomes.every((outcome) => outcome.status === 'fulfilled')) {
+  await game.finish(experimentId);
+  console.log('Запуск завершён. Dashboard остаётся доступен до Ctrl+C.');
+} else {
+  console.error('Эксперимент оставлен открытым после технической остановки. Dashboard доступен до Ctrl+C.');
+}
