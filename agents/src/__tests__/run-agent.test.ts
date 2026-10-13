@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AgentState } from '../decision.schema.js';
-import { technicalLimitReason, validDecision } from '../run-agent.js';
+import { invalidDecisionReason, technicalLimitReason, validDecision } from '../run-agent.js';
 import type { RunConfig } from '../decision.schema.js';
 
 const state: AgentState = {
@@ -37,6 +37,14 @@ describe('validDecision', () => {
     expect(validDecision({ action: 'open', cell: 7, reason: 'Тут безопасно' }, active)).toBe(false);
     expect(validDecision({ action: 'open', cell: 8, reason: 'Дальше' }, active)).toBe(true);
     expect(validDecision({ action: 'stop', reason: 'Хватит' }, active)).toBe(false);
+  });
+});
+
+describe('invalidDecisionReason', () => {
+  it('tells the model the largest affordable bet after an oversized proposal', () => {
+    expect(
+      invalidDecisionReason({ action: 'bet', amount: 25_600, reason: 'Удвою' }, { ...state, balance: 23_576 }),
+    ).toBe('Ставка 25600 превышает баланс 23576. Максимальная допустимая ставка с шагом 100: 23500.');
   });
 });
 

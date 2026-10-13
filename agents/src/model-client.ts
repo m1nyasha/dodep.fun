@@ -22,12 +22,12 @@ export class ModelClient {
     this.queue = new PQueue({ concurrency });
   }
 
-  decide(instructions: string, state: AgentState) {
+  decide(instructions: string, state: AgentState, feedback?: string) {
     return this.queue.add(async () => {
       const result = await generateText({
         model: deepseek(this.modelId),
         system: `${commonRules}\n\nХарактер:\n${instructions}`,
-        prompt: JSON.stringify(state),
+        prompt: `${JSON.stringify(state)}${feedback ? `\n\nПредыдущее решение недопустимо: ${feedback} Исправь действие в новом JSON.` : ''}`,
         output: Output.object({ schema: decisionSchema }),
         providerOptions: { deepseek: { thinking: { type: 'disabled' } } },
         maxOutputTokens: 256,

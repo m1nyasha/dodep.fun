@@ -33,17 +33,23 @@ function safeReason(error: unknown): string {
     .slice(0, 255);
 }
 
+export function invalidDecisionReason(decision: Decision, state: AgentState): string | null {
+  if (!state.allowedActions.includes(decision.action))
+    return `Действие ${decision.action} недоступно. Выбери одно из: ${state.allowedActions.join(', ')}.`;
+  if (decision.action === 'bet') {
+    if (decision.amount > state.balance)
+      return `Ставка ${decision.amount} превышает баланс ${state.balance}. Максимальная допустимая ставка с шагом ${state.rule.betStep}: ${Math.floor(state.balance / state.rule.betStep) * state.rule.betStep}.`;
+    if (decision.amount < state.rule.minBet) return `Ставка ${decision.amount} меньше минимума ${state.rule.minBet}.`;
+    if (decision.amount % state.rule.betStep !== 0)
+      return `Ставка ${decision.amount} должна быть кратна шагу ${state.rule.betStep}.`;
+  }
+  if (decision.action === 'open' && (!state.activeRound || state.activeRound.opened.includes(decision.cell)))
+    return `Клетка ${decision.cell} уже открыта или активного раунда нет. Выбери другую клетку.`;
+  return null;
+}
+
 export function validDecision(decision: Decision, state: AgentState): boolean {
-  if (!state.allowedActions.includes(decision.action)) return false;
-  if (decision.action === 'bet')
-    return (
-      decision.amount >= state.rule.minBet &&
-      decision.amount <= state.balance &&
-      decision.amount % state.rule.betStep === 0
-    );
-  if (decision.action === 'open')
-    return Boolean(state.activeRound && !state.activeRound.opened.includes(decision.cell));
-  return true;
+  return invalidDecisionReason(decision, state) === null;
 }
 
 export async function runAgent(args: {
@@ -66,12 +72,13 @@ export async function runAgent(args: {
       if (limit) throw new Error(limit);
 
       let response: Awaited<ReturnType<ModelClient['decide']>> | undefined;
+      let feedback: string | undefined;
       for (let attempt = 0; attempt < 3; attempt++) {
         const limit = technicalLimitReason(budget, config, agentId);
         if (limit) throw new Error(limit);
         budget.callsByAgent.set(agentId, (budget.callsByAgent.get(agentId) ?? 0) + 1);
         try {
-          response = await model.decide(instructions, state);
+          response = await model.decide(instructions, state, feedback);
         } catch (error) {
           await log({
             type: 'model_error',
@@ -93,7 +100,8 @@ export async function runAgent(args: {
           usage: { inputTokens: response.inputTokens, outputTokens: response.outputTokens },
           modelId: response.modelId,
         });
-        if (validDecision(response.decision, state)) break;
+        feedback = invalidDecisionReason(response.decision, state) ?? undefined;
+        if (!feedback) break;
         response = undefined;
       }
       if (!response) throw new Error('Модель трижды выбрала недопустимое действие');
