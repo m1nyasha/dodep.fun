@@ -2,14 +2,14 @@ import 'reflect-metadata';
 import type { Server } from 'node:http';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
-import { eq } from 'drizzle-orm';
+import { eq, ne } from 'drizzle-orm';
 import type { Pool } from 'mysql2/promise';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
 import { AgentTokenGuard } from '../src/agents/agent-token.guard.js';
 import { setupApp } from '../src/app.setup.js';
 import { DB, POOL, type Db } from '../src/db/db.module.js';
-import { settings, users } from '../src/db/schema.js';
+import { ruleVersions, settings, users } from '../src/db/schema.js';
 
 let mines = [0, 1, 2, 3, 4];
 export const setMines = (next: number[]) => {
@@ -66,6 +66,8 @@ export async function createTestApp(options: { agentApi?: boolean } = {}): Promi
       } finally {
         connection.release();
       }
+      await db.delete(ruleVersions).where(ne(ruleVersions.version, 1));
+      await db.update(ruleVersions).set({ isActive: true }).where(eq(ruleVersions.version, 1));
       await db
         .update(settings)
         .set({ value: { count: 1000, windowHours: 24 } })
