@@ -7,7 +7,7 @@
 1. Поднимите MySQL и примените миграции: `pnpm db:up`, затем `pnpm --filter @dodep/api db:migrate`.
 2. В `api/.env` задайте `INTERNAL_AGENT_API_ENABLED=true` и случайный `INTERNAL_AGENT_API_TOKEN` длиной не меньше 32 символов. Запустите API.
 3. На компьютере для записи скопируйте `agents/.env.example` в `agents/.env`, задайте `DEEPSEEK_API_KEY`, тот же `INTERNAL_AGENT_API_TOKEN` и `AGENT_API_URL=https://dodep.fun/api`. Ключ DeepSeek остаётся только в runner.
-4. Проверьте `ruleVersion` и лимиты в `agents/runs/experiment.example.json`. Версия правил должна существовать и иметь стартовый баланс 10 000, минимум и шаг ставки по 100. Для короткого пилота можно создать отдельную конфигурацию с меньшим `maxRounds`.
+4. Проверьте `ruleVersion` и лимиты в `agents/runs/experiment.example.json`. Версия правил должна существовать и иметь стартовый баланс 10 000, минимум и шаг ставки по 100. `maxRounds` задаёт число завершённых раундов на агента (от 1 до 2 147 483 647); для длинного запуска также увеличьте лимиты вызовов модели, токенов и времени. `maxConcurrentModelCalls` (от 1 до 100) ограничивает число запросов к DeepSeek, выполняемых одновременно во всём запуске: с одним агентом значение выше 1 не ускоряет игру.
 5. Соберите runner: `pnpm --filter @dodep/agents build`.
 
 Из каталога `agents/` запустите:

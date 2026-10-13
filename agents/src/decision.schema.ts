@@ -12,9 +12,9 @@ export type Decision = z.infer<typeof decisionSchema>;
 export const runConfigSchema = z.object({
   name: z.string().min(3).max(120),
   ruleVersion: z.number().int().positive(),
-  maxRounds: z.number().int().min(1).max(50),
+  maxRounds: z.number().int().min(1).max(2_147_483_647),
   modelId: z.string().min(1),
-  maxConcurrentModelCalls: z.number().int().min(1).max(10),
+  maxConcurrentModelCalls: z.number().int().min(1).max(100),
   maxModelCallsPerAgent: z.number().int().min(1),
   maxTotalTokens: z.number().int().min(1),
   maxDurationMinutes: z.number().int().min(1),

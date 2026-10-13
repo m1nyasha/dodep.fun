@@ -8,7 +8,7 @@ export const experimentSchema = z.object({
     .regex(/^[a-zA-Z0-9_-]+$/),
   name: z.string().min(3).max(120),
   ruleVersion: z.number().int().positive(),
-  maxRounds: z.number().int().min(1).max(50),
+  maxRounds: z.number().int().min(1).max(2_147_483_647),
   manifest: z.record(z.string(), z.unknown()),
 });
 
