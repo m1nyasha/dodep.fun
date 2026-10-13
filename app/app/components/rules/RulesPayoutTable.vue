@@ -43,20 +43,22 @@ function pick(next: number) {
 
 <style scoped>
 .wrap {
-  padding: 8px;
+  padding: 0 8px 8px;
   max-height: 560px;
   overflow: auto;
 }
 table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 14px;
 }
 th {
   position: sticky;
   top: 0;
+  z-index: 1;
   background: var(--card);
-  padding: 10px 12px;
+  padding: 18px 12px 10px;
   font-size: 12px;
   font-weight: 600;
   color: var(--muted);

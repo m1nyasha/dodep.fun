@@ -5,6 +5,8 @@ const props = defineProps<{ rules: RulesDto }>();
 const k = defineModel<number>('k', { required: true });
 const { play } = useSfx();
 
+const MAX_BET = 1_000_000_000;
+
 // Фиксированный «случайный» порядок из прототипа: поле каждый раз заполняется одинаково.
 const REVEAL_ORDER = [12, 6, 18, 7, 13, 1, 22, 16, 8, 3, 11, 19, 23, 0, 14, 9, 21, 4, 17, 2, 10, 24, 5, 15, 20];
 const order = Array.from({ length: CELLS }, (_, i) => REVEAL_ORDER.indexOf(i));
@@ -21,8 +23,9 @@ function onRange(e: Event) {
 
 function onBet(e: Event) {
   const el = e.target as HTMLInputElement;
-  el.value = el.value.replace(/\D/g, '');
-  betText.value = el.value;
+  const digits = el.value.replace(/\D/g, '');
+  betText.value = digits === '' ? '' : String(Math.min(MAX_BET, Number(digits)));
+  el.value = betText.value;
 }
 </script>
 
@@ -77,9 +80,12 @@ function onBet(e: Event) {
 <style scoped>
 .calc {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto minmax(0, 1fr);
   gap: 32px;
   padding: 26px;
+}
+.calc > div {
+  min-width: 0;
 }
 h2 {
   font-size: 20px;
@@ -185,9 +191,12 @@ input[type='range']:active::-webkit-slider-thumb {
   font-size: 14px;
 }
 .kv dd {
+  min-width: 0;
   margin: 0;
   font-size: 26px;
   font-weight: 600;
+  overflow-wrap: anywhere;
+  text-align: right;
 }
 .bet {
   width: 72px;

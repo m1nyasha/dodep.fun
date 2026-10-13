@@ -36,6 +36,15 @@ describe('RulesCalculator', () => {
     expect(w.text()).toContain(fmt(payout(500, 3, 0.973)));
   });
 
+  it('clamps a huge bet to 1 000 000 000', async () => {
+    const w = await mountSuspended(RulesCalculator, { props: { rules, k: 3 } });
+    const input = w.get('input[inputmode="numeric"]');
+    (input.element as HTMLInputElement).value = '1001111111111111111111';
+    await input.trigger('input');
+    expect((input.element as HTMLInputElement).value).toBe('1000000000');
+    expect(w.text()).toContain(fmt(payout(1_000_000_000, 3, 0.973)));
+  });
+
   it('emits the new depth from the slider', async () => {
     const w = await mountSuspended(RulesCalculator, { props: { rules, k: 3 } });
     await w.get('input[type="range"]').setValue('7');
