@@ -108,8 +108,10 @@ function onWheel(e: WheelEvent) {
 
 <style scoped>
 .bet {
+  /* Below this the field/chips can't stay readable; .controls wraps it onto its
+     own line (flex-grow fills the row) instead of squeezing past it. */
   flex: 1;
-  min-width: 0;
+  min-width: 230px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -211,6 +213,9 @@ input.tick {
 
 @media (width <= 760px) {
   .bet {
+    /* On phones the field is always worth a full row of its own (a snugly-fitting
+       one-row layout would leave the CTA button too narrow to be a good tap target),
+       regardless of whether the dice button is also present. */
     flex: 1 1 100%;
   }
 }

@@ -101,9 +101,15 @@ watch(isAuthed, (authed) => (authed ? sync() : game.reset()));
 }
 
 .controls {
+  /* Fixed cap (matches --w's own max), not tied to viewport height: the row must fit
+     its own content (bet field + optional dice + CTA) regardless of how tall the
+     screen is. GameBetInput's min-width + flex-wrap here let it drop to its own
+     line instead of being squeezed when space is tight (e.g. the dice button
+     appearing mid-round). */
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
-  max-width: var(--w);
+  max-width: 540px;
   margin: 10px auto 0;
 }
 
@@ -170,10 +176,6 @@ watch(isAuthed, (authed) => (authed ? sync() : game.reset()));
     margin: 0 -6px;
     padding: 14px 12px 12px;
     border-radius: 24px;
-  }
-
-  .controls {
-    flex-wrap: wrap;
   }
 
   .dice {
