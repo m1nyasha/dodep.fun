@@ -62,7 +62,7 @@ watch(isAuthed, (authed) => (authed ? sync() : game.reset()));
 
 <style scoped>
 .console {
-  --w: clamp(320px, calc(100vh - 430px), 540px);
+  --w: clamp(480px, calc(100vh - 430px), 540px);
 
   position: relative;
   overflow: hidden;

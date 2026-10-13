@@ -34,6 +34,9 @@ const label = computed(() => `Клетка ${props.index + 1}, ${STATE_TEXT[prop
 
 <style scoped>
 .tile {
+  --edge: var(--key-d);
+  --ring: 0 0 #0000;
+
   position: relative;
   display: grid;
   place-items: center;
@@ -42,8 +45,9 @@ const label = computed(() => `Клетка ${props.index + 1}, ${STATE_TEXT[prop
   background: var(--key);
   color: var(--ink);
   box-shadow:
-    0 6px 0 var(--key-d),
-    0 8px 12px #0008;
+    0 6px 0 var(--edge),
+    0 8px 12px #0008,
+    var(--ring);
   transform: translateY(-3px);
   transition:
     transform 0.14s ease,
@@ -90,8 +94,6 @@ const label = computed(() => `Клетка ${props.index + 1}, ${STATE_TEXT[prop
 
 .open {
   cursor: default;
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 #0009;
 }
 
 .open::before {
@@ -103,10 +105,10 @@ const label = computed(() => `Клетка ${props.index + 1}, ${STATE_TEXT[prop
 }
 
 .safe {
+  --edge: var(--coin-d);
+  --ring: 0 0 24px #ffc62933;
+
   background: var(--coin);
-  box-shadow:
-    0 2px 0 var(--coin-d),
-    0 0 24px #ffc62933;
   animation: flip-in 0.4s var(--spring);
 }
 
@@ -116,6 +118,8 @@ const label = computed(() => `Клетка ${props.index + 1}, ${STATE_TEXT[prop
 }
 
 .mine {
+  --edge: var(--mine-d);
+
   background: var(--mine);
   animation: boom 0.5s var(--spring);
 }
@@ -135,9 +139,10 @@ const label = computed(() => `Клетка ${props.index + 1}, ${STATE_TEXT[prop
 }
 
 .ghost {
+  --ring: inset 0 0 0 1.5px #ff523355;
+
   background: #2e211b;
   color: var(--mine);
-  box-shadow: inset 0 0 0 1.5px #ff523355;
   animation: ghost-in 0.4s var(--d, 0ms) both;
 }
 
@@ -202,8 +207,9 @@ const label = computed(() => `Клетка ${props.index + 1}, ${STATE_TEXT[prop
   .tile {
     border-radius: 9px;
     box-shadow:
-      0 4px 0 var(--key-d),
-      0 6px 8px #0007;
+      0 4px 0 var(--edge),
+      0 6px 8px #0007,
+      var(--ring);
   }
 
   .live .tile:not(.open):hover::after {

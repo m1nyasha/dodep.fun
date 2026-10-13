@@ -41,4 +41,19 @@ describe('GameBetInput', () => {
     await w.setProps({ max: 500 });
     expect(w.emitted('update:modelValue')?.at(-1)).toEqual([500]);
   });
+
+  it('strips non-digit characters typed into the input', async () => {
+    const w = await mount(100);
+    const input = w.get('input');
+    await input.setValue('1a2b3');
+    expect(input.element.value).toBe('123');
+  });
+
+  it('strips non-digit characters pasted into the input', async () => {
+    const w = await mount(100);
+    const input = w.get('input');
+    input.element.setSelectionRange(0, input.element.value.length);
+    await input.trigger('paste', { clipboardData: { getData: () => '1 234abc' } });
+    expect(input.element.value).toBe('1234');
+  });
 });

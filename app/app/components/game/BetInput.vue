@@ -41,7 +41,16 @@ function chip(value: (typeof CHIPS)[number][1]) {
 }
 
 function onInput(e: Event) {
-  text.value = (e.target as HTMLInputElement).value.replace(/[^\d\s]/g, '');
+  text.value = (e.target as HTMLInputElement).value.replace(/\D/g, '');
+}
+
+function onPaste(e: ClipboardEvent) {
+  e.preventDefault();
+  const pasted = (e.clipboardData?.getData('text') ?? '').replace(/\D/g, '');
+  const input = e.target as HTMLInputElement;
+  const start = input.selectionStart ?? text.value.length;
+  const end = input.selectionEnd ?? text.value.length;
+  text.value = (text.value.slice(0, start) + pasted + text.value.slice(end)).replace(/\D/g, '');
 }
 
 function onKey(e: KeyboardEvent) {
@@ -74,6 +83,7 @@ function onWheel(e: WheelEvent) {
           :class="{ tick: tick.on.value }"
           :disabled="disabled"
           @input="onInput"
+          @paste="onPaste"
           @blur="set(read())"
           @keydown="onKey"
           @wheel="onWheel"
