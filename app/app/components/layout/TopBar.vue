@@ -119,11 +119,11 @@ const sfx = useSfx();
   }
 
   .right {
-    gap: 4px;
+    gap: 2px;
   }
 
   .icon-btn {
-    width: 36px;
+    width: 34px;
   }
 
   .account {

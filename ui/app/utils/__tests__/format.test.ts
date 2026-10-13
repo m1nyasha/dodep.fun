@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ago, fmt, fx, pct, plural, signed, stamp } from '../format';
+import { ago, fmt, fmtCompact, fx, pct, plural, signed, stamp } from '../format';
 
 const NBSP = ' ';
 
@@ -14,6 +14,18 @@ describe('fmt / signed', () => {
     expect(signed(154)).toBe('+154');
     expect(signed(-100)).toBe('−100');
     expect(signed(0)).toBe('0');
+  });
+});
+
+describe('fmtCompact', () => {
+  it('keeps full precision below a million', () => {
+    expect(fmtCompact(10_000)).toBe(fmt(10_000));
+    expect(fmtCompact(999_999)).toBe(fmt(999_999));
+  });
+
+  it('shortens millions and billions so huge balances stay short', () => {
+    expect(fmtCompact(1_616_805_438)).toBe(`1,6${NBSP}млрд`);
+    expect(fmtCompact(1_234_567)).toBe(`1,2${NBSP}млн`);
   });
 });
 

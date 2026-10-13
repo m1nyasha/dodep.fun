@@ -37,7 +37,7 @@ onKeyStroke('Escape', () => (open.value = false));
       @click="open = !open"
     >
       <UiCoin />
-      <span>{{ fmt(shown) }}</span>
+      <span>{{ fmtCompact(shown) }}</span>
       <i v-if="daily.available.value" class="dot" />
     </button>
     <span v-if="delta" :key="delta.id" class="delta mono" :class="delta.value > 0 ? 'pos' : 'neg'">{{
@@ -78,6 +78,29 @@ onKeyStroke('Escape', () => (open.value = false));
 .wallet :deep(.ui-coin) {
   font-size: 17px;
   box-shadow: none;
+}
+
+.wallet span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: min(140px, 22vw);
+}
+
+@media (width <= 760px) {
+  .wallet {
+    gap: 6px;
+    padding: 0 10px 0 9px;
+    font-size: 13px;
+  }
+
+  .wallet :deep(.ui-coin) {
+    font-size: 15px;
+  }
+
+  .wallet span {
+    max-width: 64px;
+  }
 }
 
 .bump {

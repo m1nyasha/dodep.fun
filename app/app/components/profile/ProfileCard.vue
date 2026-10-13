@@ -66,11 +66,12 @@ p {
 }
 .stats {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 8px;
   margin: 20px 0 18px;
 }
 .stats div {
+  min-width: 0;
   padding: 12px 14px;
   border-radius: 13px;
   background: var(--paper);
@@ -83,6 +84,7 @@ dd {
   margin: 2px 0 0;
   font-size: 18px;
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 .back {
   font-size: 14px;

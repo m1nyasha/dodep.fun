@@ -28,6 +28,7 @@ const text = computed(() =>
 
 <style scoped>
 .kpi {
+  min-width: 0;
   padding: 18px 20px;
   background: var(--card);
   border: 1px solid var(--line);
@@ -45,6 +46,7 @@ b {
   margin: 6px 0 2px;
   font: 600 clamp(22px, 2.5vw, 30px) var(--font-mono);
   letter-spacing: -0.04em;
+  overflow-wrap: anywhere;
 }
 
 small {

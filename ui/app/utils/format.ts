@@ -1,7 +1,14 @@
 const nf = new Intl.NumberFormat('ru-RU');
+const nfCompact = new Intl.NumberFormat('ru-RU', { notation: 'compact', maximumFractionDigits: 1 });
 const TZ = 'Europe/Moscow';
 
 export const fmt = (n: number) => nf.format(Math.round(Number(n) || 0));
+
+/** Short form for tight spaces (e.g. 1 616 805 438 -> "1,6 млрд"); falls back to fmt() below 1,000,000. */
+export const fmtCompact = (n: number) => {
+  const v = Math.round(Number(n) || 0);
+  return Math.abs(v) >= 1_000_000 ? nfCompact.format(v) : fmt(v);
+};
 
 export const signed = (n: number) => (n > 0 ? '+' : n < 0 ? '−' : '') + fmt(Math.abs(n));
 

@@ -54,6 +54,45 @@ button:disabled {
   display: none !important;
 }
 
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-2) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--line-2);
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+/* Dark containers (e.g. the game console, the ladder scroller) need a lighter thumb to stay visible. */
+.console,
+.ladder {
+  scrollbar-color: var(--c-muted) transparent;
+}
+
+.console::-webkit-scrollbar-thumb,
+.ladder::-webkit-scrollbar-thumb {
+  background: var(--c-muted);
+}
+
+.console::-webkit-scrollbar-thumb:hover,
+.ladder::-webkit-scrollbar-thumb:hover {
+  background: var(--c-text);
+}
+
 h1,
 h2,
 h3 {
