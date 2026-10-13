@@ -1,4 +1,6 @@
 <script setup lang="ts">
+definePageMeta({ middleware: 'auth' });
+
 useSeoMeta({
   title: 'Журнал — dodep.fun',
   description: 'Каждый раунд: ставка, исход, выплата и раскладка мин, которую можно сверить с хэшем.',

@@ -35,7 +35,7 @@ const marker = computed(() => {
       </defs>
       <line class="zero" x1="0" :x2="W" :y1="geo.zeroY" :y2="geo.zeroY" />
       <path class="area" :d="`${geo.d}L${W},${H}L0,${H}Z`" :fill="`url(#${gradientId})`" />
-      <path class="line" :d="geo.d" pathLength="1" />
+      <path class="line" :d="geo.d" />
     </svg>
     <template v-if="marker">
       <i class="dot" :style="marker.style" />
@@ -76,8 +76,11 @@ svg {
   stroke-width: 2.2;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
+  /* ponytail: reveal via clip-path (fill-box of the path, which always spans exactly [0, width] — see
+     sparkGeometry) instead of stroke-dasharray+pathLength. The dash trick depends on the browser
+     normalizing pathLength against non-uniformly scaled, non-scaling-stroke geometry, which some engines
+     get wrong and stop short of the right edge; clip-path is a plain box-relative wipe, so it can't. */
+  clip-path: fill-box inset(0 100% 0 0);
   animation: draw 1.3s 0.2s var(--out) forwards;
 }
 .dot,
@@ -110,7 +113,7 @@ svg {
 }
 @keyframes draw {
   to {
-    stroke-dashoffset: 0;
+    clip-path: fill-box inset(0 0 0 0);
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -118,7 +121,7 @@ svg {
   .line {
     animation: none;
     opacity: 1;
-    stroke-dashoffset: 0;
+    clip-path: none;
   }
 }
 </style>

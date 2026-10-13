@@ -1,17 +1,20 @@
 <script setup lang="ts">
-const NAV = [
+const ALL_NAV = [
   { to: '/', label: 'Игра', icon: 'grid' },
   { to: '/rating', label: 'Рейтинг', icon: 'trophy' },
   { to: '/rules', label: 'Правила', icon: 'book' },
   { to: '/journal', label: 'Журнал', icon: 'list' },
 ] as const;
 
+const { isAuthed } = useMe();
+const NAV = computed(() => ALL_NAV.filter((n) => isAuthed.value || n.to !== '/journal'));
+
 const route = useRoute();
 const nav = useTemplateRef<HTMLElement>('nav');
 const hovered = ref<string | null>(null);
 const pill = reactive({ x: 0, w: 0, visible: false, ready: false });
 const active = computed(
-  () => NAV.find((n) => (n.to === '/' ? route.path === '/' : route.path.startsWith(n.to)))?.to ?? null,
+  () => NAV.value.find((n) => (n.to === '/' ? route.path === '/' : route.path.startsWith(n.to)))?.to ?? null,
 );
 
 function place() {

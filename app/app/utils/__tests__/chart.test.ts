@@ -47,6 +47,18 @@ describe('sparkGeometry', () => {
     const g = sparkGeometry([0, 0], 800, 180, 10);
     expect(Number.isFinite(g.y(0))).toBe(true);
   });
+
+  it('always ends the path at x = width, whatever the point count or shape', () => {
+    for (const points of [
+      [0, 5],
+      [0, 100, -100],
+      [0, 10, 30, 20, 40, 10, -30, -60, -40, -20, 0, 20, 10, -10, 250, 230, 200, 180, 150, 100, 900],
+    ]) {
+      const g = sparkGeometry(points, 800, 180, 10);
+      const lastX = Number(g.d.split('L').at(-1)!.split(',')[0]);
+      expect(lastX).toBe(800);
+    }
+  });
 });
 
 describe('kLabel', () => {

@@ -1,9 +1,13 @@
+<script setup lang="ts">
+const { isAuthed } = useMe();
+</script>
+
 <template>
   <footer class="foot">
     <span>dodep.fun — игра на виртуальные монеты. Без покупки, депозита и вывода.</span>
     <span class="links">
       <NuxtLink to="/rules">Правила</NuxtLink>
-      <NuxtLink to="/journal">Проверка раундов</NuxtLink>
+      <NuxtLink v-if="isAuthed" to="/journal">Проверка раундов</NuxtLink>
     </span>
   </footer>
 </template>

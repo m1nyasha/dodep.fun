@@ -1,13 +1,14 @@
 <script setup lang="ts">
 const route = useRoute();
 const { isAuthed } = useMe();
-if (isAuthed.value) await navigateTo('/');
+const redirectTo = computed(() => safeRedirect(route.query.redirect));
+if (isAuthed.value) await navigateTo(redirectTo.value);
 
 const mode = computed(() => (route.query.mode === 'register' ? 'register' : 'login'));
 useHead({ title: 'Вход — dodep.fun' });
 
 function done() {
-  setTimeout(() => navigateTo('/'), 450);
+  setTimeout(() => navigateTo(redirectTo.value), 450);
 }
 </script>
 

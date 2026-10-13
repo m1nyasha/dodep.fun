@@ -41,30 +41,32 @@ async function verify() {
     </summary>
     <div v-if="open" class="body">
       <JournalMiniBoard size="md" :mines="round.mines" :picks="round.opened" :hit="round.hitCell" />
-      <dl class="verify">
-        <div>
-          <dt>Мины</dt>
-          <dd class="mono">{{ minesLabel(round.mines) }}</dd>
+      <div class="data">
+        <dl class="verify">
+          <div>
+            <dt>Мины</dt>
+            <dd class="mono">{{ minesLabel(round.mines) }}</dd>
+          </div>
+          <div>
+            <dt>Соль</dt>
+            <dd class="mono">{{ round.salt }}</dd>
+          </div>
+          <div>
+            <dt>SHA-256 до первого хода</dt>
+            <dd class="mono hash">{{ round.hash }}</dd>
+          </div>
+          <div>
+            <dt>Правила</dt>
+            <dd class="mono">v{{ round.ruleVersion }} · RTP {{ pct(round.rtp) }}</dd>
+          </div>
+        </dl>
+        <div class="act" role="status">
+          <span v-if="verdict !== null" class="verdict" :class="verdict ? 'pos' : 'neg'">
+            <UiIcon v-if="verdict" name="check" />
+            {{ verdict ? 'Совпадает с хэшем, показанным до первого хода' : 'Не совпадает' }}
+          </span>
+          <UiButton v-else size="sm" :loading="checking" @click="verify"><UiIcon name="check" />Проверить</UiButton>
         </div>
-        <div>
-          <dt>Соль</dt>
-          <dd class="mono">{{ round.salt }}</dd>
-        </div>
-        <div>
-          <dt>SHA-256 до первого хода</dt>
-          <dd class="mono hash">{{ round.hash }}</dd>
-        </div>
-        <div>
-          <dt>Правила</dt>
-          <dd class="mono">v{{ round.ruleVersion }} · RTP {{ pct(round.rtp) }}</dd>
-        </div>
-      </dl>
-      <div class="act" role="status">
-        <span v-if="verdict !== null" class="verdict" :class="verdict ? 'pos' : 'neg'">
-          <UiIcon v-if="verdict" name="check" />
-          {{ verdict ? 'Совпадает с хэшем, показанным до первого хода' : 'Не совпадает' }}
-        </span>
-        <UiButton v-else size="sm" :loading="checking" @click="verify"><UiIcon name="check" />Проверить</UiButton>
       </div>
     </div>
   </details>
@@ -123,8 +125,15 @@ summary small {
   align-items: start;
   padding: 8px 6px 20px 34px;
 }
-.verify {
+.data {
+  /* ponytail: verify + act live in one flex column so the button sits right under the data it belongs to,
+     instead of being a separate .body grid row that trails below the (taller) board image. */
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.verify {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px 20px;
@@ -142,7 +151,8 @@ dd {
   word-break: break-all;
 }
 .act {
-  grid-column: 2;
+  display: flex;
+  justify-content: flex-end;
 }
 .verdict {
   display: inline-flex;
@@ -175,9 +185,6 @@ dd {
   }
   .verify {
     grid-template-columns: 1fr;
-  }
-  .act {
-    grid-column: 1;
   }
 }
 @media (prefers-reduced-motion: reduce) {
