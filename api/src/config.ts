@@ -17,6 +17,8 @@ const env = z
     SENTRY_DSN: z.string().default(''),
     SENTRY_ENVIRONMENT: z.string().default('development'),
     SENTRY_RELEASE: z.string().default(''),
+    INTERNAL_AGENT_API_ENABLED: z.enum(['true', 'false']).default('false'),
+    INTERNAL_AGENT_API_TOKEN: z.string().default(''),
   })
   .parse(process.env);
 
@@ -27,5 +29,10 @@ export const config = {
   trustProxy: env.TRUST_PROXY,
   adminUrl: env.ADMIN_URL,
   throttleLimit: env.THROTTLE_LIMIT,
+  agentApiEnabled: env.INTERNAL_AGENT_API_ENABLED === 'true',
+  agentApiToken: env.INTERNAL_AGENT_API_TOKEN,
   sentry: { dsn: env.SENTRY_DSN, environment: env.SENTRY_ENVIRONMENT, release: env.SENTRY_RELEASE },
 };
+
+if (config.agentApiEnabled && config.agentApiToken.length < 32)
+  throw new Error('INTERNAL_AGENT_API_TOKEN must have at least 32 characters when agent API is enabled');

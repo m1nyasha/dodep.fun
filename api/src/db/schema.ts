@@ -101,13 +101,65 @@ export type RuleRow = typeof ruleVersions.$inferSelect;
 
 export const experiments = mysqlTable('experiments', {
   id: id(),
+  externalKey: varchar('external_key', { length: 120 }).notNull().unique(),
   name: varchar('name', { length: 120 }).notNull(),
   ruleVersionId: uuid('rule_version_id')
     .notNull()
     .references(() => ruleVersions.id),
   startedAt: ts('started_at').notNull(),
   finishedAt: ts('finished_at'),
+  manifest: json('manifest').$type<Record<string, unknown>>().notNull(),
+  maxRounds: int('max_rounds').notNull(),
 });
+
+export const experimentAgents = mysqlTable(
+  'experiment_agents',
+  {
+    id: id(),
+    experimentId: uuid('experiment_id')
+      .notNull()
+      .references(() => experiments.id),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id),
+    profileKey: varchar('profile_key', { length: 40 }).notNull(),
+    slot: int('slot').notNull(),
+    status: mysqlEnum('status', ['running', 'stopped', 'technical_stop']).notNull().default('running'),
+    stopReason: varchar('stop_reason', { length: 255 }),
+    createdAt: createdAt(),
+    finishedAt: ts('finished_at'),
+  },
+  (t) => [
+    uniqueIndex('experiment_agents_slot_uq').on(t.experimentId, t.profileKey, t.slot),
+    uniqueIndex('experiment_agents_user_uq').on(t.userId),
+  ],
+);
+
+export const agentDecisions = mysqlTable(
+  'agent_decisions',
+  {
+    id: uuid('id').primaryKey(),
+    experimentId: uuid('experiment_id')
+      .notNull()
+      .references(() => experiments.id),
+    agentId: uuid('agent_id')
+      .notNull()
+      .references(() => experimentAgents.id),
+    action: mysqlEnum('action', ['bet', 'open', 'cash_out', 'stop']).notNull(),
+    amount: money('amount'),
+    cell: tinyint('cell'),
+    reason: varchar('reason', { length: 240 }).notNull(),
+    modelId: varchar('model_id', { length: 120 }).notNull(),
+    inputTokens: int('input_tokens').notNull().default(0),
+    outputTokens: int('output_tokens').notNull().default(0),
+    result: json('result').$type<Record<string, unknown>>().notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('agent_decisions_experiment_idx').on(t.experimentId, t.createdAt),
+    index('agent_decisions_agent_idx').on(t.agentId, t.createdAt),
+  ],
+);
 
 export const rounds = mysqlTable(
   'rounds',

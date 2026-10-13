@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import type { Pool } from 'mysql2/promise';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { AgentTokenGuard } from '../src/agents/agent-token.guard.js';
 import { setupApp } from '../src/app.setup.js';
 import { DB, POOL, type Db } from '../src/db/db.module.js';
 import { settings, users } from '../src/db/schema.js';
@@ -17,6 +18,8 @@ export const setMines = (next: number[]) => {
 
 const DATA_TABLES = [
   'admin_actions',
+  'agent_decisions',
+  'experiment_agents',
   'status_history',
   'auth_fingerprints',
   'ledger',
@@ -35,8 +38,9 @@ export interface TestApp {
   close(): Promise<void>;
 }
 
-export async function createTestApp(): Promise<TestApp> {
+export async function createTestApp(options: { agentApi?: boolean } = {}): Promise<TestApp> {
   const builder = Test.createTestingModule({ imports: [AppModule] });
+  if (options.agentApi) builder.overrideGuard(AgentTokenGuard).useValue({ canActivate: () => true });
   // `game/mine-source.ts` lands in Task 6; `as string` keeps TS from resolving the module eagerly.
   const mineSourcePath = '../src/game/mine-source.js' as string;
   const { MINE_SOURCE } = await import(mineSourcePath).catch(() => ({ MINE_SOURCE: null }));

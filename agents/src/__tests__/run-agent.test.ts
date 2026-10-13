@@ -1,0 +1,74 @@
+import { describe, expect, it } from 'vitest';
+import type { AgentState } from '../decision.schema.js';
+import { invalidDecisionReason, technicalLimitReason, validDecision } from '../run-agent.js';
+import type { RunConfig } from '../decision.schema.js';
+
+const state: AgentState = {
+  agentId: 'a',
+  nickname: 'AI_chaser',
+  profileKey: 'loss-chaser',
+  slot: 1,
+  balance: 9900,
+  completedRounds: 1,
+  maxRounds: 50,
+  wagered: 100,
+  payout: 0,
+  rule: { version: 1, rtp: 0.973, minBet: 100, betStep: 100 },
+  activeRound: null,
+  recentRounds: [],
+  allowedActions: ['bet', 'stop'],
+  terminalReason: null,
+};
+
+describe('validDecision', () => {
+  it('only accepts available actions with legal bet amounts', () => {
+    expect(validDecision({ action: 'bet', amount: 300, reason: 'Отыграться' }, state)).toBe(true);
+    expect(validDecision({ action: 'bet', amount: 250, reason: 'Отыграться' }, state)).toBe(false);
+    expect(validDecision({ action: 'bet', amount: 10000, reason: 'Отыграться' }, state)).toBe(false);
+    expect(validDecision({ action: 'open', cell: 1, reason: 'Проверить' }, state)).toBe(false);
+  });
+
+  it('does not reopen an already safe cell', () => {
+    const active: AgentState = {
+      ...state,
+      activeRound: { id: 'r', bet: 100, safeCount: 1, opened: [7], potentialPayout: 120 },
+      allowedActions: ['open', 'cash_out'],
+    };
+    expect(validDecision({ action: 'open', cell: 7, reason: 'Тут безопасно' }, active)).toBe(false);
+    expect(validDecision({ action: 'open', cell: 8, reason: 'Дальше' }, active)).toBe(true);
+    expect(validDecision({ action: 'stop', reason: 'Хватит' }, active)).toBe(false);
+  });
+});
+
+describe('invalidDecisionReason', () => {
+  it('tells the model the largest affordable bet after an oversized proposal', () => {
+    expect(
+      invalidDecisionReason({ action: 'bet', amount: 25_600, reason: 'Удвою' }, { ...state, balance: 23_576 }),
+    ).toBe('Ставка 25600 превышает баланс 23576. Максимальная допустимая ставка с шагом 100: 23500.');
+  });
+});
+
+describe('technicalLimitReason', () => {
+  const config: RunConfig = {
+    name: 'Пилот',
+    ruleVersion: 1,
+    maxRounds: 200,
+    modelId: 'deepseek-flash',
+    maxConcurrentModelCalls: 20,
+    maxModelCallsPerAgent: 1000,
+    maxTotalTokens: 200_000,
+    maxDurationMinutes: 120,
+    dashboardPort: 4400,
+  };
+
+  it('identifies the token limit with measured usage', () => {
+    expect(
+      technicalLimitReason(
+        { totalTokens: 200_906, callsByAgent: new Map([['agent', 174]]), deadline: 10_000 },
+        config,
+        'agent',
+        1_000,
+      ),
+    ).toBe('Достигнут лимит токенов: 200906 / 200000');
+  });
+});

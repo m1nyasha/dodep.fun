@@ -1,0 +1,25 @@
+{
+  "name": "@dodep/agents",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run src",
+    "start": "node dist/run.js",
+    "monitor": "node dist/monitor.js"
+  },
+  "dependencies": {
+    "@ai-sdk/deepseek": "^1.0.0",
+    "ai": "^6.0.0",
+    "p-queue": "^9.0.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.4"
+  }
+}

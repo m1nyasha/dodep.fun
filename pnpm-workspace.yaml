@@ -4,6 +4,7 @@ packages:
   - ui
   - app
   - admin
+  - agents
 allowBuilds:
   '@scarf/scarf': false
   '@swc/core': true
