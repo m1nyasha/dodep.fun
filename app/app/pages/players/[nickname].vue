@@ -52,9 +52,7 @@ async function onLogout() {
         <ProfileRecentRounds />
         <ProfileDailyCard @claimed="onSaved" />
       </template>
-      <UiPanel v-else>
-        <UiEmpty>История раундов других игроков появится позже. <NuxtLink to="/rating">К рейтингу</NuxtLink></UiEmpty>
-      </UiPanel>
+      <ProfilePlayerRounds v-else :nickname="player.nickname" />
     </div>
   </section>
 </template>

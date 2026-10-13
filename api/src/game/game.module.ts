@@ -12,6 +12,6 @@ import { RulesService } from './rules.service.js';
   imports: [AuthModule, FeedModule],
   controllers: [RoundsController, RulesController],
   providers: [RoundsService, RulesService, mineSourceProvider],
-  exports: [RulesService],
+  exports: [RulesService, RoundsService],
 })
 export class GameModule {}

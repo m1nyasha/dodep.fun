@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { createTestApp, register, setUser, type TestApp } from './helpers.js';
+import { createTestApp, register, setMines, setUser, type TestApp } from './helpers.js';
 
 describe('players', () => {
   let t: TestApp;
@@ -135,6 +135,34 @@ describe('players', () => {
     expect((await a6.put('/api/me/status').send({ text: 'hi' }).expect(403)).body.code).toBe('STATUS_FORBIDDEN');
     const cleared = await a1.put('/api/me/status').send({ text: '   ' }).expect(200);
     expect(cleared.body.status).toBeNull();
+  });
+
+  it('lists another players finished rounds publicly, hides the active round, 404s for blocked', async () => {
+    const target = await register(t.server, 'watched');
+    setMines([20, 21, 22, 23, 24]);
+    for (let i = 0; i < 3; i++) {
+      const { body } = await target.post('/api/rounds').send({ bet: 100 }).expect(201);
+      await target.post(`/api/rounds/${body.round.id}/open`).send({ cell: 20 }).expect(200);
+    }
+    await target.post('/api/rounds').send({ bet: 100 }).expect(201);
+
+    const first = await request(t.server).get('/api/players/watched/rounds?limit=2').expect(200);
+    expect(first.body.items.map((r: { roundNo: number }) => r.roundNo)).toEqual([3, 2]);
+    expect(first.body.items[0]).toMatchObject({ status: 'hit_mine', mines: [20, 21, 22, 23, 24] });
+    expect(first.body.items[0].salt).toBeTruthy();
+    expect(first.body.nextCursor).toBe(2);
+
+    const second = await request(t.server).get('/api/players/watched/rounds?limit=2&cursor=2').expect(200);
+    expect(second.body.items.map((r: { roundNo: number }) => r.roundNo)).toEqual([1]);
+    expect(second.body.nextCursor).toBeNull();
+    expect(second.body.items.every((r: { status: string }) => r.status !== 'active')).toBe(true);
+
+    const missing = await request(t.server).get('/api/players/ghost/rounds').expect(404);
+    expect(missing.body.code).toBe('PLAYER_NOT_FOUND');
+
+    await setUser(t.db, 'watched', { blockedAt: new Date() });
+    const blocked = await request(t.server).get('/api/players/watched/rounds').expect(404);
+    expect(blocked.body.code).toBe('PLAYER_NOT_FOUND');
   });
 
   it('summarizes humans and AI separately', async () => {

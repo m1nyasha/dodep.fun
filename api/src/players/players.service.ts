@@ -1,9 +1,10 @@
-import type { LeaderboardDto, PlayerDto, StatsDto, StatsScope } from '@dodep/shared';
+import type { LeaderboardDto, PlayerDto, RoundsPageDto, StatsDto, StatsScope } from '@dodep/shared';
 import { Inject, Injectable } from '@nestjs/common';
 import { and, count, eq, isNull, like, type SQL } from 'drizzle-orm';
 import { apiError } from '../common/api-error.js';
 import { DB, type Db } from '../db/db.module.js';
 import { users } from '../db/schema.js';
+import { RoundsService } from '../game/rounds.service.js';
 import { rankedPlayers, toPlayerDto } from './ranking.js';
 import { summarize } from './stats.js';
 
@@ -16,7 +17,10 @@ export interface LeaderboardQuery {
 
 @Injectable()
 export class PlayersService {
-  constructor(@Inject(DB) private readonly db: Db) {}
+  constructor(
+    @Inject(DB) private readonly db: Db,
+    private readonly roundsService: RoundsService,
+  ) {}
 
   async leaderboard(query: LeaderboardQuery): Promise<LeaderboardDto> {
     const ranked = rankedPlayers(this.db);
@@ -37,6 +41,15 @@ export class PlayersService {
     const [row] = await this.db.select().from(ranked).where(eq(ranked.nickname, nickname));
     if (!row) throw apiError(404, 'PLAYER_NOT_FOUND', 'Игрок не найден или скрыт из рейтинга');
     return toPlayerDto(row);
+  }
+
+  async rounds(nickname: string, cursor: number | undefined, limit: number): Promise<RoundsPageDto> {
+    const [row] = await this.db
+      .select({ id: users.id })
+      .from(users)
+      .where(and(eq(users.nickname, nickname), isNull(users.blockedAt)));
+    if (!row) throw apiError(404, 'PLAYER_NOT_FOUND', 'Игрок не найден или скрыт из рейтинга');
+    return this.roundsService.list(row.id, cursor, limit);
   }
 
   async ranks(nickname: string): Promise<{ rank: number; humanRank: number | null } | null> {

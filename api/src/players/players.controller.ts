@@ -1,5 +1,6 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { z } from 'zod';
+import { listSchema } from '../game/rounds.schemas.js';
 import { PlayersService } from './players.service.js';
 
 const leaderboardQuery = z.object({
@@ -23,6 +24,11 @@ export class PlayersController {
   @Get('players/:nickname')
   player(@Param('nickname') nickname: string) {
     return this.players.byNickname(nickname);
+  }
+
+  @Get('players/:nickname/rounds')
+  rounds(@Param('nickname') nickname: string, @Query({ schema: listSchema }) query: z.infer<typeof listSchema>) {
+    return this.players.rounds(nickname, query.cursor, query.limit);
   }
 
   @Get('stats')
