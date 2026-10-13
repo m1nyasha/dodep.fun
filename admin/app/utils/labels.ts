@@ -8,6 +8,7 @@ const LABELS: Record<AdminActionKind, string> = {
   rules_create: 'Новая версия правил',
   rules_activate: 'Активировать правила',
   settings_update: 'Лимит регистраций',
+  coins_adjust: 'Начислить/списать монеты',
 };
 
 export const actionLabel = (action: AdminActionKind) => LABELS[action];

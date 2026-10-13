@@ -5,10 +5,11 @@ import { CurrentUser } from '../auth/session.guard.js';
 import type { UserRow } from '../db/schema.js';
 import { AccountsService } from './accounts.service.js';
 import { AdminSessionGuard } from './admin-session.guard.js';
-import { pageSchema, reasonSchema } from './admin.schemas.js';
+import { coinsSchema, pageSchema, reasonSchema } from './admin.schemas.js';
 
 const accountsQuery = pageSchema.extend({ q: z.string().trim().max(20).optional() });
 type Reason = z.infer<typeof reasonSchema>;
+type Coins = z.infer<typeof coinsSchema>;
 
 @Controller('admin')
 @UseGuards(AdminSessionGuard)
@@ -44,6 +45,16 @@ export class AccountsController {
     @Body({ schema: reasonSchema }) body: Reason,
   ) {
     return this.accounts.setBlocked(admin, nickname, false, body.reason);
+  }
+
+  @Post('accounts/:nickname/coins')
+  @HttpCode(200)
+  adjustCoins(
+    @CurrentUser() admin: UserRow,
+    @Param('nickname') nickname: string,
+    @Body({ schema: coinsSchema }) body: Coins,
+  ) {
+    return this.accounts.adjustCoins(admin, nickname, body.amount, body.reason);
   }
 
   @Get('statuses')

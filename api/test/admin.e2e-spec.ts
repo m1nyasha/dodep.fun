@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { ruleVersions, rounds, sessions, users } from '../src/db/schema.js';
+import { ledger, ruleVersions, rounds, sessions, users } from '../src/db/schema.js';
 import { createTestApp, PASSWORD, register, setUser, type TestApp } from './helpers.js';
 
 async function ticketFor(t: TestApp, nickname: string) {
@@ -269,6 +269,94 @@ describe('admin accounts and statuses', () => {
 
     await admin.post('/api/admin/statuses/northstar/show').send({ reason: 'ошибка' }).expect(200);
     expect((await request(t.server).get('/api/players/northstar').expect(200)).body.status).toBe('Сначала думай');
+  });
+});
+
+describe('admin coin adjustment', () => {
+  let t: TestApp;
+  beforeAll(async () => {
+    t = await createTestApp();
+  });
+  beforeEach(() => t.reset());
+  afterAll(() => t.close());
+
+  it('credits coins, writes a ledger row and an audit row without touching net', async () => {
+    const { admin } = await loginAdmin(t);
+    await register(t.server, 'payee');
+
+    const res = await admin.post('/api/admin/accounts/payee/coins').send({ amount: 500, reason: 'бонус' }).expect(200);
+    expect(res.body).toMatchObject({ nickname: 'payee', balance: 10_500, net: 0 });
+
+    const [row] = await t.db.select().from(users).where(eq(users.nickname, 'payee'));
+    if (!row) throw new Error('expected payee');
+    expect(row.totalWagered).toBe(0);
+    expect(row.totalPayout).toBe(0);
+
+    const ledgerRows = await t.db.select().from(ledger).where(eq(ledger.userId, row.id));
+    expect(ledgerRows.filter((l) => l.kind === 'admin')).toMatchObject([
+      { kind: 'admin', amount: 500, balanceBefore: 10_000, balanceAfter: 10_500 },
+    ]);
+
+    const audit = await admin.get('/api/admin/audit').expect(200);
+    expect(audit.body.items[0]).toMatchObject({
+      action: 'coins_adjust',
+      target: 'payee',
+      reason: 'бонус',
+      payload: { amount: 500, balanceBefore: 10_000, balanceAfter: 10_500 },
+    });
+  });
+
+  it('debits coins', async () => {
+    const { admin } = await loginAdmin(t);
+    await register(t.server, 'debtor');
+    const res = await admin
+      .post('/api/admin/accounts/debtor/coins')
+      .send({ amount: -1000, reason: 'штраф' })
+      .expect(200);
+    expect(res.body.balance).toBe(9_000);
+  });
+
+  it('rejects a debit that would push the balance below zero', async () => {
+    const { admin } = await loginAdmin(t);
+    await register(t.server, 'poor');
+    const res = await admin.post('/api/admin/accounts/poor/coins').send({ amount: -20_000, reason: 'x' }).expect(400);
+    expect(res.body.code).toBe('INSUFFICIENT_BALANCE');
+  });
+
+  it('rejects an adjustment while a round is active', async () => {
+    const { admin } = await loginAdmin(t);
+    const player = await register(t.server, 'busy');
+    await player.post('/api/rounds').send({ bet: 100 }).expect(201);
+    const res = await admin.post('/api/admin/accounts/busy/coins').send({ amount: 100, reason: 'x' }).expect(409);
+    expect(res.body.code).toBe('ROUND_ACTIVE');
+  });
+
+  it('validates the amount and the reason', async () => {
+    const { admin } = await loginAdmin(t);
+    await register(t.server, 'val');
+    await admin.post('/api/admin/accounts/val/coins').send({ amount: 0, reason: 'x' }).expect(400);
+    await admin.post('/api/admin/accounts/val/coins').send({ amount: 1_000_000_001, reason: 'x' }).expect(400);
+    await admin.post('/api/admin/accounts/val/coins').send({ amount: -1_000_000_001, reason: 'x' }).expect(400);
+    await admin.post('/api/admin/accounts/val/coins').send({ amount: 100, reason: '' }).expect(400);
+  });
+
+  it('allows adjusting a blocked account', async () => {
+    const { admin } = await loginAdmin(t);
+    await register(t.server, 'blocked1');
+    await admin.post('/api/admin/accounts/blocked1/block').send({ reason: 'спам' }).expect(200);
+    const res = await admin.post('/api/admin/accounts/blocked1/coins').send({ amount: 100, reason: 'x' }).expect(200);
+    expect(res.body.balance).toBe(10_100);
+  });
+
+  it('404s for an unknown nickname', async () => {
+    const { admin } = await loginAdmin(t);
+    const res = await admin.post('/api/admin/accounts/ghost/coins').send({ amount: 100, reason: 'x' }).expect(404);
+    expect(res.body.code).toBe('ACCOUNT_NOT_FOUND');
+  });
+
+  it('requires an admin session', async () => {
+    await register(t.server, 'anon');
+    await request(t.server).post('/api/admin/accounts/anon/coins').send({ amount: 100, reason: 'x' }).expect(401);
   });
 });
 

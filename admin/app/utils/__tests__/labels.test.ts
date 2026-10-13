@@ -10,5 +10,6 @@ describe('actionLabel', () => {
     expect(actionLabel('rules_create')).toBe('Новая версия правил');
     expect(actionLabel('rules_activate')).toBe('Активировать правила');
     expect(actionLabel('settings_update')).toBe('Лимит регистраций');
+    expect(actionLabel('coins_adjust')).toBe('Начислить/списать монеты');
   });
 });

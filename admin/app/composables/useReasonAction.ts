@@ -7,6 +7,7 @@ export interface ReasonTarget {
   done: string;
   danger?: boolean;
   optional?: boolean;
+  extraBody?: Record<string, unknown>;
 }
 
 export function useReasonAction() {
@@ -24,7 +25,7 @@ export function useReasonAction() {
     const current = target.value;
     if (!current) return;
     try {
-      await api(current.path, { method: current.method ?? 'POST', body: { reason } });
+      await api(current.path, { method: current.method ?? 'POST', body: { ...current.extraBody, reason } });
       toast.show(current.done, 'Записано в историю.', 'good');
       target.value = null;
       await refreshNuxtData();

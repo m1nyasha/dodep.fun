@@ -23,6 +23,16 @@ export const ruleSchema = z
       ctx.addIssue({ code: 'custom', path: [path], message });
   });
 
+export const coinsSchema = z.object({
+  amount: z
+    .number()
+    .int()
+    .min(-1_000_000_000)
+    .max(1_000_000_000)
+    .refine((v) => v !== 0, { message: 'Сумма не может быть нулевой' }),
+  reason: z.string().trim().min(1, 'Укажите причину').max(255),
+});
+
 export const limitSchema = z.object({
   count: z.number().int().min(1).max(1000),
   windowHours: z.number().int().min(1).max(720),

@@ -23,6 +23,20 @@ function toggle() {
     done: `${blocked ? 'Разблокирован' : 'Заблокирован'}: ${account.nickname}`,
   });
 }
+
+function adjustCoins(amount: number) {
+  const account = data.value?.account;
+  if (!account) return;
+  action.ask({
+    path: `/admin/accounts/${encodeURIComponent(account.nickname)}/coins`,
+    title: amount > 0 ? 'Начислить монеты' : 'Списать монеты',
+    confirmLabel: amount > 0 ? 'Начислить' : 'Списать',
+    danger: amount < 0,
+    description: `${account.nickname}: ${signed(amount)} монет. Причина попадёт в историю действий.`,
+    done: `${signed(amount)} монет: ${account.nickname}`,
+    extraBody: { amount },
+  });
+}
 </script>
 
 <template>
@@ -49,6 +63,9 @@ function toggle() {
             <dd>{{ stamp(data.account.blockedAt) }} · {{ data.account.blockReason }}</dd>
           </div>
         </dl>
+      </UiPanel>
+      <UiPanel title="Монеты">
+        <CoinsForm @submit="adjustCoins" />
       </UiPanel>
       <UiPanel title="Связанные аккаунты">
         <ul v-if="data.related.length" class="related">

@@ -15,6 +15,13 @@
       "when": 1791825524283,
       "tag": "0001_seed_and_views",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1791904707366,
+      "tag": "0002_admin_coins",
+      "breakpoints": true
     }
   ]
 }

@@ -183,7 +183,7 @@ export const ledger = mysqlTable(
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id),
-    kind: mysqlEnum('kind', ['signup', 'bet', 'payout', 'daily']).notNull(),
+    kind: mysqlEnum('kind', ['signup', 'bet', 'payout', 'daily', 'admin']).notNull(),
     amount: money('amount').notNull(),
     balanceBefore: money('balance_before').notNull(),
     balanceAfter: money('balance_after').notNull(),
@@ -248,6 +248,7 @@ export const adminActions = mysqlTable(
       'rules_create',
       'rules_activate',
       'settings_update',
+      'coins_adjust',
     ]).notNull(),
     targetUserId: uuid('target_user_id').references(() => users.id),
     payload: json('payload'),

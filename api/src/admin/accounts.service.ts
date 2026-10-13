@@ -10,7 +10,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { and, count, desc, eq, inArray, isNotNull, like, ne } from 'drizzle-orm';
 import { apiError } from '../common/api-error.js';
 import { DB, type Db, type Tx } from '../db/db.module.js';
-import { authFingerprints, sessions, users, type UserRow } from '../db/schema.js';
+import { authFingerprints, ledger, rounds, sessions, users, type UserRow } from '../db/schema.js';
 import { rankedPlayers } from '../players/ranking.js';
 import { AuditService } from './audit.service.js';
 
@@ -105,6 +105,35 @@ export class AccountsService {
         reason,
       });
       return toAccountDto({ ...user, ...patch });
+    });
+  }
+
+  async adjustCoins(admin: UserRow, nickname: string, amount: number, reason: string): Promise<AdminAccountDto> {
+    return this.db.transaction(async (tx) => {
+      const user = await this.byNickname(tx, nickname, true);
+      const [active] = await tx
+        .select({ id: rounds.id })
+        .from(rounds)
+        .where(and(eq(rounds.userId, user.id), eq(rounds.status, 'active')));
+      if (active) throw apiError(409, 'ROUND_ACTIVE', 'Раунд уже идёт');
+      const balanceAfter = user.balance + amount;
+      if (balanceAfter < 0) throw apiError(400, 'INSUFFICIENT_BALANCE', 'Недостаточно монет');
+      await tx.update(users).set({ balance: balanceAfter }).where(eq(users.id, user.id));
+      await tx.insert(ledger).values({
+        userId: user.id,
+        kind: 'admin',
+        amount,
+        balanceBefore: user.balance,
+        balanceAfter,
+      });
+      await this.audit.log(tx, {
+        adminId: admin.id,
+        action: 'coins_adjust',
+        targetUserId: user.id,
+        payload: { amount, balanceBefore: user.balance, balanceAfter },
+        reason,
+      });
+      return toAccountDto({ ...user, balance: balanceAfter });
     });
   }
 

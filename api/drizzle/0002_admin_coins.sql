@@ -1,0 +1,2 @@
+ALTER TABLE `admin_actions` MODIFY COLUMN `action` enum('block','unblock','hide_status','show_status','rules_create','rules_activate','settings_update','coins_adjust') NOT NULL;--> statement-breakpoint
+ALTER TABLE `ledger` MODIFY COLUMN `kind` enum('signup','bet','payout','daily','admin') NOT NULL;
