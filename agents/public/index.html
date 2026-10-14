@@ -743,8 +743,8 @@
           const identity = el('div', 'agent-identity');
           identity.append(
             el('span', 'agent-index', 'АГЕНТ ' + String(index + 1).padStart(2, '0')),
-            el('h3', 'agent-name', agent.nickname),
-            el('span', 'agent-type', agent.profileTitle ?? agent.profileKey),
+            el('h3', 'agent-name', agent.profileTitle ?? agent.profileKey),
+            el('span', 'agent-type', agent.nickname),
           );
           const status = terminalLabels[agent.terminalReason] ?? (agent.activeRound ? 'ИГРАЕТ' : 'ДУМАЕТ');
           head.append(
