@@ -6,14 +6,8 @@ defineProps<{ players: PlayerDto[]; me: string | null }>();
 
 <template>
   <section v-if="players.length" class="podium">
-    <NuxtLink
-      v-for="p in players"
-      :key="p.nickname"
-      :to="playerPath(p.nickname)"
-      class="pod"
-      :class="`p${p.humanRank}`"
-    >
-      <span class="place" aria-hidden="true">{{ p.humanRank }}</span>
+    <NuxtLink v-for="p in players" :key="p.nickname" :to="playerPath(p.nickname)" class="pod" :class="`p${p.rank}`">
+      <span class="place" aria-hidden="true">{{ p.rank }}</span>
       <UiAvatar :name="p.nickname" :kind="playerKind(p, me)" :size="48" />
       <span class="name">
         {{ p.nickname }}

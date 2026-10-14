@@ -9,7 +9,7 @@ useSeoMeta({
 const api = useApi();
 const { me } = useMe();
 const { data: top } = await useAsyncData('podium', () =>
-  api<LeaderboardDto>('/leaderboard', { query: { filter: 'human', limit: 3 } }),
+  api<LeaderboardDto>('/leaderboard', { query: { filter: 'all', limit: 3 } }),
 );
 </script>
 

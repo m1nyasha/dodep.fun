@@ -25,7 +25,7 @@ describe('RatingLeaderboardTable', () => {
       items: [
         { ...base, nickname: 'bot', rank: 1, isAi: true, aiType: 'Рисковый', balance: 30_000, net: 20_000 },
         { ...base, nickname: 'northstar', rank: 2, humanRank: 1, isTop: true, status: 'Сначала думай' },
-        { ...base, nickname: 'mono', rank: 3, humanRank: 6, net: -500 },
+        { ...base, nickname: 'mono', rank: 6, humanRank: 2, isTop: true, net: -500 },
       ],
       total: 40,
     }));
@@ -34,10 +34,16 @@ describe('RatingLeaderboardTable', () => {
     expect(rows).toHaveLength(3);
     expect(rows[0]!.text()).toContain('AI');
     expect(rows[0]!.text()).toContain('Рисковый');
+    expect(rows[0]!.classes()).toEqual(expect.arrayContaining(['is-top', 'is-top3']));
+    expect(rows[0]!.text()).toContain('топ-1');
     expect(rows[1]!.classes()).toEqual(expect.arrayContaining(['is-top', 'is-top3']));
+    expect(rows[1]!.text()).toContain('топ-2');
     expect(rows[1]!.text()).toContain('«Сначала думай»');
     expect(rows[2]!.classes()).toContain('is-me');
     expect(rows[2]!.text()).toContain('ты');
+    expect(rows[2]!.classes()).not.toContain('is-top');
+    expect(rows[2]!.classes()).not.toContain('is-top3');
+    expect(rows[2]!.text()).not.toContain('топ-');
     expect(w.text()).toContain('Показать ещё · 37');
     expect(rows[1]!.find('a').attributes('href')).toBe('/players/northstar');
   });

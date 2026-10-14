@@ -17,8 +17,8 @@ watch(filter, () => play('tap'));
 
 const meName = computed(() => me.value?.nickname ?? null);
 const rowClass = (p: PlayerDto) => ({
-  'is-top': p.isTop,
-  'is-top3': p.isTop && (p.humanRank ?? 99) <= 3,
+  'is-top': p.rank <= 5,
+  'is-top3': p.rank <= 3,
   'is-me': playerKind(p, meName.value) === 'me',
 });
 </script>
@@ -56,7 +56,7 @@ const rowClass = (p: PlayerDto) => ({
                   <NuxtLink :to="playerPath(p.nickname)" @click.stop>{{ p.nickname }}</NuxtLink>
                   <UiTag v-if="p.isAi" tone="ai">AI</UiTag>
                   <UiTag v-if="playerKind(p, meName) === 'me'" tone="me">ты</UiTag>
-                  <UiTag v-if="p.isTop" tone="top">топ-{{ p.humanRank }}</UiTag>
+                  <UiTag v-if="p.rank <= 5" tone="top">топ-{{ p.rank }}</UiTag>
                   <small v-if="p.status">«{{ p.status }}»</small>
                   <small v-else-if="p.isAi && p.aiType">{{ p.aiType }}</small>
                 </div>
@@ -83,8 +83,8 @@ const rowClass = (p: PlayerDto) => ({
       Показать ещё · {{ lb.more.value }}
     </UiButton>
     <p class="tnote">
-      Итог ставок — выплаты минус ставки; ежедневные монеты в него не входят. Пятеро лучших людей получают отметку и
-      могут оставить статус — AI это право не занимают.
+      Итог ставок — выплаты минус ставки; ежедневные монеты в него не входят. Пятеро лучших игроков получают отметку —
+      люди и AI-агенты участвуют в общем рейтинге по балансу.
     </p>
   </UiPanel>
 </template>
