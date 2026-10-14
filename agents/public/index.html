@@ -6,18 +6,26 @@
     <title>dodep.fun · AI-эксперимент</title>
     <style>
       :root {
-        color-scheme: light;
-        --paper: #efe9dd;
-        --card: #f9f6ef;
-        --ink: #18160f;
-        --muted: #776f5f;
-        --line: #ddd4c2;
-        --line-2: #c8bda7;
+        color-scheme: dark;
+        --paper: #121310;
+        --card: #1e201b;
+        --ink: #f3ede0;
+        --muted: #b2ad9f;
+        --line: #33362d;
+        --line-2: #484c3f;
+        --accent-ink: #18160f;
+        --dots: #292c23;
+        --shadow: #0b0c09;
+        --playing-shadow: #283359;
+        --playing-bg: #252d46;
+        --paused-bg: #3b2520;
+        --cell-bg: #303329;
+        --cell-border: #626953;
         --coin: #ffc629;
         --mine: #ff5233;
-        --ai: #3d5afe;
-        --pos: #0b8a52;
-        --neg: #d4381c;
+        --ai: #9aafff;
+        --pos: #83d4a8;
+        --neg: #ff907a;
         --c-bg: #1b1914;
         --c-2: #25221c;
         --c-3: #312d25;
@@ -33,7 +41,7 @@
       body {
         margin: 0;
         min-height: 100vh;
-        background: var(--paper) radial-gradient(circle at 1px 1px, #d5cbb6 1px, transparent 1.3px) 0 0 / 24px 24px;
+        background: var(--paper) radial-gradient(circle at 1px 1px, var(--dots) 1px, transparent 1.3px) 0 0 / 24px 24px;
       }
       .shell {
         width: min(1680px, calc(100% - 48px));
@@ -75,9 +83,10 @@
         align-items: center;
         gap: 8px;
         padding: 8px 12px;
-        border: 1px solid var(--ink);
+        border: 1px solid var(--accent-ink);
         border-radius: 7px;
         background: var(--coin);
+        color: var(--accent-ink);
         font:
           700 11px/1 'JetBrains Mono',
           ui-monospace,
@@ -164,8 +173,9 @@
         border-radius: 15px;
       }
       .stat:nth-child(2) {
-        background: var(--coin);
-        border-color: #dca820;
+        background: #302918;
+        border-color: #75602c;
+        color: var(--coin);
       }
       .stat-label {
         display: block;
@@ -173,7 +183,7 @@
         color: var(--muted);
       }
       .stat:nth-child(2) .stat-label {
-        color: #57400a;
+        color: #d9c99b;
       }
       .stat strong {
         display: block;
@@ -225,11 +235,11 @@
         border: 1px solid var(--line-2);
         border-radius: 17px;
         background: var(--card);
-        box-shadow: 0 4px 0 #d9d0bf;
+        box-shadow: 0 4px 0 var(--shadow);
       }
       .agent-card.is-playing {
         border-color: var(--ai);
-        box-shadow: 0 4px 0 #b3bffa;
+        box-shadow: 0 4px 0 var(--playing-shadow);
       }
       .agent-head {
         display: flex;
@@ -281,12 +291,12 @@
       .badge.playing {
         color: var(--ai);
         border-color: var(--ai);
-        background: #e8ecff;
+        background: var(--playing-bg);
       }
       .badge.paused {
         color: var(--neg);
         border-color: var(--mine);
-        background: #ffebe5;
+        background: var(--paused-bg);
       }
       .agent-body {
         display: flex;
@@ -312,7 +322,7 @@
       .balance::before {
         content: '●';
         color: var(--coin);
-        -webkit-text-stroke: 1px var(--ink);
+        -webkit-text-stroke: 1px var(--accent-ink);
         margin-right: 6px;
         font-size: 0.7em;
         vertical-align: 0.08em;
@@ -349,10 +359,10 @@
         display: grid;
         place-items: center;
         aspect-ratio: 1;
-        border: 1px solid #77705f;
+        border: 1px solid var(--cell-border);
         border-radius: 4px;
-        background: #dad1bf;
-        color: #aaa08c;
+        background: var(--cell-bg);
+        color: var(--muted);
         font:
           700 13px 'JetBrains Mono',
           ui-monospace,
@@ -361,7 +371,7 @@
       .cell.open {
         background: var(--coin);
         border-color: #bf9016;
-        color: var(--ink);
+        color: var(--accent-ink);
       }
       .cell.latest {
         outline: 2px solid var(--ai);
@@ -371,7 +381,7 @@
       .cell.mine {
         background: var(--mine);
         border-color: var(--neg);
-        color: white;
+        color: var(--accent-ink);
       }
       .board-side {
         align-self: center;
@@ -448,7 +458,7 @@
         position: sticky;
         top: 18px;
         overflow: hidden;
-        border: 1px solid var(--c-bg);
+        border: 1px solid var(--line-2);
         border-radius: 17px;
         background: var(--c-bg);
         color: var(--c-text);
@@ -520,10 +530,10 @@
         overflow-wrap: anywhere;
       }
       .event.hit strong {
-        color: #ff907a;
+        color: var(--neg);
       }
       .event.win strong {
-        color: #83d4a8;
+        color: var(--pos);
       }
       .empty {
         padding: 25px 0;

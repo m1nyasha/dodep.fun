@@ -42,14 +42,33 @@ dodep-api ──MySQL──► Timeweb Cloud (внешняя БД)
    ALTER DATABASE dodep CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
    ```
 3. Строка подключения (`DATABASE_URL`):
-   - приватная сеть — предпочтительно: `mysql://USER:PASSWORD@PRIVATE_HOST:3306/dodep`;
-   - публичный адрес — только с TLS, JSON в параметре `ssl` URL-кодируется:
-     `mysql://USER:PASSWORD@PUBLIC_HOST:3306/dodep?ssl=%7B%22rejectUnauthorized%22%3Atrue%7D`.
-     Если подключение падает с ошибкой сертификата (свой CA у Timeweb) — переходите на приватную сеть: файл CA через URL не передать.
+   - приватная сеть — предпочтительно, но при `require_secure_transport=ON` TLS обязателен и в ней;
+   - публичный адрес — только с TLS. Параметр `ssl` включает TLS и проверку сертификата; JSON в нём URL-кодируется:
+     `mysql://USER:PASSWORD@HOST:3306/dodep?ssl=%7B%22rejectUnauthorized%22%3Atrue%7D`.
+     Если в URL уже есть параметры после `?`, добавьте `&ssl=...` вместо `?ssl=...`;
    - спецсимволы в пароле URL-кодировать (`@` → `%40` и т. д.).
 4. Включить автоматические бэкапы кластера в панели Timeweb.
 
 Миграции применяет сам API при старте контейнера — вручную ничего запускать не нужно.
+
+### Сертификат CA для MySQL
+
+Если у БД собственный CA (например, сертификат из панели Timeweb), добавьте его в приложение **`dodep-api`** после создания приложения (раздел 4):
+
+1. **Volumes → Add Volume → File**:
+   - **Content** — полный PEM сертификата CA, включая строки `-----BEGIN CERTIFICATE-----` и `-----END CERTIFICATE-----`;
+   - **File Path** — `mysql-ca.pem`;
+   - **Mount Path** — `/etc/mysql-ssl/mysql-ca.pem`: полный путь внутри контейнера с именем файла, а не только `/`.
+2. В **Environment** задайте обе переменные:
+   ```dotenv
+   DATABASE_URL=mysql://USER:PASSWORD@HOST:3306/dodep?ssl=%7B%22rejectUnauthorized%22%3Atrue%7D
+   NODE_EXTRA_CA_CERTS=/etc/mysql-ssl/mysql-ca.pem
+   ```
+3. Сохраните настройки и нажмите **Redeploy**. Файл должен быть доступен для чтения пользователю `node`, от которого работает контейнер.
+
+`NODE_EXTRA_CA_CERTS` добавляет CA к доверенным сертификатам Node.js, но **не включает TLS**: для этого нужен параметр `ssl` в `DATABASE_URL`. Переменные PHP `DB_SSL_CA_FILE` и `MYSQL_ATTR_SSL_CA` наш код не использует. Настройки действуют для API, миграций при старте и команды `admin-grant`; менять код или пересобирать образ для них не нужно. Node.js читает дополнительный CA при запуске процесса, поэтому после изменения сертификата нужен Redeploy.
+
+См. документацию [File Mount в Dokploy](https://docs.dokploy.com/docs/core/applications/advanced#volumesmounts) и [NODE_EXTRA_CA_CERTS в Node.js](https://nodejs.org/api/cli.html#node_extra_ca_certsfile).
 
 ## 3. Реестр и образы
 
@@ -96,7 +115,8 @@ TAG=v1.0.1 pnpm docker:push app    # только один
 ### `dodep-api`
 
 ```
-DATABASE_URL=mysql://USER:PASSWORD@HOST:3306/dodep
+DATABASE_URL=mysql://USER:PASSWORD@HOST:3306/dodep?ssl=%7B%22rejectUnauthorized%22%3Atrue%7D
+NODE_EXTRA_CA_CERTS=/etc/mysql-ssl/mysql-ca.pem
 COOKIE_SECURE=true
 TRUST_PROXY=1
 ADMIN_URL=https://admin.dodep.fun
@@ -108,6 +128,7 @@ SENTRY_ENVIRONMENT=production
 | Переменная       | Зачем                                                                                                                          |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | `DATABASE_URL`   | подключение к MySQL (раздел 2)                                                                                                 |
+| `NODE_EXTRA_CA_CERTS` | путь к файлу CA внутри контейнера; нужен при собственном CA у БД (раздел 2). Если CA уже доверенный, переменную можно убрать |
 | `COOKIE_SECURE`  | cookie `sid` / `admin_sid` только по HTTPS. В проде **обязательно `true`**                                                     |
 | `TRUST_PROXY`    | сколько прокси перед API. Только Traefik → `1`. От этого зависит, какой IP попадёт в лимит регистраций и отпечатки (раздел 10) |
 | `ADMIN_URL`      | куда ведёт кнопка «Админка»; пустое значение — кнопки нет                                                                      |
@@ -198,13 +219,19 @@ NUXT_PUBLIC_SENTRY_ENVIRONMENT=production
 
 | Что         | Как                                                                                            | Ожидается                                                           |
 | ----------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| API         | `curl https://dodep.fun/api/health`                                                            | `{"ok":true}`                                                       |
+| API и БД    | `curl -i https://dodep.fun/api/health`                                                         | HTTP 200 и `{"ok":true}`                                            |
 | Сайт        | открыть https://dodep.fun                                                                      | страница игры, без ошибок в консоли                                 |
 | SSR → API   | открыть https://dodep.fun/rules                                                                | таблица выплат (данные пришли через `NUXT_API_INTERNAL_URL`)        |
 | Swagger     | https://dodep.fun/api/docs                                                                     | открывается; https://admin.dodep.fun/api/admin/docs без входа — 401 |
 | WebSocket   | на главной у «За столом» пульсирует точка; DevTools → Network → WS → `/api/ws` со статусом 101 | соединение открыто                                                  |
 | Cookie      | зарегистрироваться; DevTools → Application → Cookies → `sid`                                   | `Secure`, `HttpOnly`, `SameSite=Lax`                                |
 | Реальный IP | после регистрации — карточка аккаунта в админке, раздел отпечатков                             | ваш IP, а не адрес Traefik/Cloudflare                               |
+
+`GET /api/health` не требует авторизации и выполняет `SELECT 1` в MySQL: успешный ответ подтверждает работу API и доступ к БД, но не проверяет игровые сценарии. До настройки домена проверьте из **Terminal** контейнера `dodep-api`:
+
+```bash
+wget -qO- http://127.0.0.1:4200/api/health
+```
 
 4. Назначить себя админом: у `dodep-api` вкладка **Terminal** (оболочка в контейнере) →
    ```bash
@@ -263,6 +290,8 @@ TAG=v1.1.0 pnpm docker:push api && curl -X POST "<Webhook URL dodep-api>"
 
 | Симптом                                        | Причина и решение                                                                                                  |
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `ER_SECURE_TRANSPORT_REQUIRED` (3159) при миграциях | БД требует TLS, а соединение его не использует. Проверить параметр `ssl` в `DATABASE_URL` приложения `dodep-api`, сохранить и Redeploy. Одного `NODE_EXTRA_CA_CERTS` недостаточно |
+| Ошибка проверки сертификата MySQL | Проверить PEM CA, Mount Path и `NODE_EXTRA_CA_CERTS` (раздел 2), доступность файла пользователю `node`, затем Redeploy. Проверку сертификата не отключать |
 | Домен без HTTPS / ошибка сертификата           | DNS не указывал на сервер в момент добавления домена. Проверить DNS, удалить и заново добавить домен               |
 | `404` на `/api/...`                            | включён **Strip Path** у домена API — выключить                                                                    |
 | `502 Bad Gateway`                              | неверный **Container Port** (4200/4100/80) или контейнер не healthy — смотреть Logs                                |
@@ -271,7 +300,16 @@ TAG=v1.1.0 pnpm docker:push api && curl -X POST "<Webhook URL dodep-api>"
 | Рейтинг/правила пустые, в логах app ошибки SSR | неверный `NUXT_API_INTERNAL_URL` — должен быть App Name сервиса API и порт 4200                                    |
 | Вход работает, но сразу «Нужно войти»          | `COOKIE_SECURE=true`, а сайт открыт по http — открывать только по https                                            |
 | Кнопки «Админка» нет                           | пустой `ADMIN_URL` или у пользователя нет прав (`admin-grant`)                                                     |
+| Ticket исчезает из URL, затем `/api/admin/me` возвращает 401 без запроса `auth/exchange` | В старом образе админки middleware не пропускает `/auth/` после редиректа nginx. Обновить образ `dodep-admin` с исправлением и получить новую ссылку. Удаление ticket страницей после чтения — штатное поведение |
 | Регистрация «недоступна» у всех                | лимит считает один IP на всех — неверный `TRUST_PROXY` / Cloudflare (раздел 10)                                    |
+
+Если после Redeploy остаётся ошибка 3159, проверьте фактическую конфигурацию в **Terminal** контейнера `dodep-api` (команда не выводит пароль):
+
+```bash
+node --input-type=module -e 'import { config } from "./dist/config.js"; const u = new URL(config.databaseUrl); console.log({ ssl: u.searchParams.get("ssl"), caFile: process.env.NODE_EXTRA_CA_CERTS });'
+```
+
+Для конфигурации с собственным CA ожидаются `ssl: '{"rejectUnauthorized":true}'` и `caFile: '/etc/mysql-ssl/mysql-ca.pem'`. Если `ssl: null`, процесс получает URL без параметра TLS. Сверьте Environment приложения и Redeploy. Если контейнер не успевает запуститься для открытия Terminal, начните с проверки Environment и логов деплоя.
 
 ## 13. Локальная проверка образов (без Dokploy)
 
