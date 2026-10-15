@@ -47,7 +47,11 @@ watch(
 function validate(): boolean {
   clear();
   const nickname = form.nickname.trim();
-  if (!/^[\p{L}\p{N}_]{3,20}$/u.test(nickname)) errors.nickname = '3–20 символов: буквы, цифры или _';
+  if (register.value) {
+    if (!/^[A-Za-z0-9_]{3,20}$/.test(nickname)) errors.nickname = '3–20 символов: латинские буквы, цифры или _';
+  } else if (!/^[\p{L}\p{N}_]{3,20}$/u.test(nickname)) {
+    errors.nickname = '3–20 символов: буквы, цифры или _';
+  }
   if (form.password.length < 8) errors.password = 'Нужно минимум 8 символов';
   if (register.value && !form.agree) errors.agree = true;
   return !errors.nickname && !errors.password && !errors.agree;

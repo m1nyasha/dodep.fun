@@ -16,9 +16,17 @@ describe('AuthForm', () => {
   it('validates before calling the API', async () => {
     const w = await fill('register', 'ab', 'short');
     await w.get('form').trigger('submit');
-    expect(w.text()).toContain('3–20 символов: буквы, цифры или _');
+    expect(w.text()).toContain('3–20 символов: латинские буквы, цифры или _');
     expect(w.text()).toContain('Нужно минимум 8 символов');
     expect(w.get('.check').classes()).toContain('err');
+  });
+
+  it.each(['игрок', 'playerЯ', 'café', '１２３'])('rejects registration with nickname %s', async (nickname) => {
+    const w = await fill('register', nickname, 'password123');
+    await w.get('input[name="agree"]').setValue(true);
+    await w.get('form').trigger('submit');
+    expect(w.get('[data-field="nickname"] .field-msg').text()).toBe('3–20 символов: латинские буквы, цифры или _');
+    expect(w.emitted('done')).toBeUndefined();
   });
 
   it('shows the registration limit message in the common block', async () => {
@@ -50,7 +58,7 @@ describe('AuthForm', () => {
     await vi.waitFor(() => expect(w.get('[data-field="nickname"] .field-msg').text()).toBe('Этот ник уже занят'));
   });
 
-  it('logs in and emits done', async () => {
+  it.each(['felix', 'игрок'])('logs in as %s and emits done', async (nickname) => {
     registerEndpoint('/api/auth/login', { method: 'POST', handler: () => new Response(null, { status: 204 }) });
     registerEndpoint('/api/me', () => ({
       nickname: 'felix',
@@ -67,7 +75,7 @@ describe('AuthForm', () => {
       dailyTarget: 10_000,
       adminUrl: null,
     }));
-    const w = await fill('login', 'felix', 'password123');
+    const w = await fill('login', nickname, 'password123');
     await w.get('form').trigger('submit');
     await vi.waitFor(() => expect(w.emitted('done')).toHaveLength(1));
   });

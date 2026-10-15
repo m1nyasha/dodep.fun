@@ -3,7 +3,7 @@ import { z } from 'zod';
 const nickname = z
   .string()
   .trim()
-  .regex(/^[\p{L}\p{N}_]{3,20}$/u, '3–20 символов: буквы, цифры или _');
+  .regex(/^[A-Za-z0-9_]{3,20}$/, '3–20 символов: латинские буквы, цифры или _');
 const password = z.string().min(8, 'Нужно минимум 8 символов').max(128);
 const clientHash = z
   .string()
