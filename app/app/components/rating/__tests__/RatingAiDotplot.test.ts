@@ -60,4 +60,26 @@ describe('RatingAiDotplot', () => {
     expect(dots.filter((d) => d.classes().includes('bust'))).toHaveLength(1);
     expect(dots[0]!.attributes('href')).toMatch(/^\/players\//);
   });
+
+  it('includes every AI account across pages when drawing dots and calculating medians', async () => {
+    const players = [
+      ...Array.from({ length: 100 }, (_, i) => ai(`skeptic-${i}`, 'skeptic', 10_000)),
+      ...Array.from({ length: 105 }, (_, i) => ai(`all-in-${i}`, 'all-in', i)),
+    ];
+    registerEndpoint('/api/rules', () => rules);
+    registerEndpoint('/api/leaderboard', (event: { path?: string; url?: URL }): LeaderboardDto => {
+      const query = new URL(String(event.path ?? event.url), 'http://test').searchParams;
+      const offset = Number(query.get('offset') ?? 0);
+      const limit = Number(query.get('limit') ?? 15);
+      return { items: players.slice(offset, offset + limit), total: players.length };
+    });
+
+    const w = await mountSuspended(RatingAiDotplot);
+
+    expect(w.findAll('a.dot')).toHaveLength(205);
+    expect(w.find('.head p').text()).toContain('205 агентов');
+    const allIn = w.findAll('.row').find((row) => row.find('.name').text() === 'all-in');
+    expect(allIn?.findAll('a.dot')).toHaveLength(105);
+    expect(allIn?.find('.med-v').text()).toBe(fmt(52));
+  });
 });

@@ -1,14 +1,24 @@
 <script setup lang="ts">
-import type { LeaderboardDto } from '@dodep/shared';
+import type { LeaderboardDto, PlayerDto } from '@dodep/shared';
 
 const api = useApi();
 const { rules, load: loadRules } = useRules();
 await useAsyncData('rules', loadRules);
-const { data } = await useAsyncData('ai-players', () =>
-  api<LeaderboardDto>('/leaderboard', { query: { filter: 'ai', limit: 100 } }),
-);
+const { data } = await useAsyncData('ai-players', async () => {
+  const items: PlayerDto[] = [];
+  let total: number;
+  do {
+    const page = await api<LeaderboardDto>('/leaderboard', {
+      query: { filter: 'ai', limit: 100, offset: items.length },
+    });
+    items.push(...page.items);
+    total = page.total;
+    if (!page.items.length) break;
+  } while (items.length < total);
+  return items;
+});
 
-const players = computed(() => data.value?.items ?? []);
+const players = computed(() => data.value ?? []);
 const rows = computed(() => groupByType(players.value));
 const max = computed(() => axisMax(players.value));
 const step = computed(() => (max.value > 60_000 ? 50_000 : 10_000));
